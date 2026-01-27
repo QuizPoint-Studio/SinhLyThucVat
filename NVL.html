@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trắc nghiệm Sinh lý Thực vật - Modern UI</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        }
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap');
+        body { 
+            font-family: 'Be Vietnam Pro', sans-serif; 
+            background: linear-gradient(135deg, #ecfdf5 0%, #f0f9ff 100%);
+            min-height: 100vh;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-enter { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICON COMPONENTS ---
+        const IconWrapper = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+
+        const CheckCircle = (props) => <IconWrapper {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconWrapper>;
+        const XCircle = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></IconWrapper>;
+        const ArrowLeft = (props) => <IconWrapper {...props}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></IconWrapper>;
+        const RotateCcw = (props) => <IconWrapper {...props}><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></IconWrapper>;
+        const Award = (props) => <IconWrapper {...props}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></IconWrapper>;
+        const History = (props) => <IconWrapper {...props}><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></IconWrapper>;
+        const Trash2 = (props) => <IconWrapper {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></IconWrapper>;
+        const Clock = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconWrapper>;
+        const LogOut = (props) => <IconWrapper {...props}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></IconWrapper>;
+        const Eye = (props) => <IconWrapper {...props}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></IconWrapper>;
+        const ChevronLeft = (props) => <IconWrapper {...props}><polyline points="15 18 9 12 15 6"/></IconWrapper>;
+        const ChevronRight = (props) => <IconWrapper {...props}><polyline points="9 18 15 12 9 6"/></IconWrapper>;
+        const Sparkles = (props) => <IconWrapper {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></IconWrapper>;
+        const Leaf = (props) => <IconWrapper {...props}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></IconWrapper>;
+        const Microscope = (props) => <IconWrapper {...props}><path d="M6 18h8"/><path d="M3 22h18"/><path d="M14 22a7 7 0 1 0 0-14h-1"/><path d="M9 14h2"/><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/></IconWrapper>;
+        const Sprout = (props) => <IconWrapper {...props}><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.2.4-4.8-.4-3.2-1.6-4.5-9-4.5-9s3.6 1.8 7 5.7Z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1.7-1.3 2.9-1.3 2.9-1.3-1.4 4-6.1 4.4-8 2.7"/></IconWrapper>;
+        const Sun = (props) => <IconWrapper {...props}><circle cx="12" cy="12" r="5"/><path d="M12 1v2"/><path d="M12 21v2"/><path d="M4.22 4.22l1.42 1.42"/><path d="M18.36 18.36l1.42 1.42"/><path d="M1 12h2"/><path d="M21 12h2"/><path d="M4.22 19.78l1.42-1.42"/><path d="M18.36 5.64l1.42-1.42"/></IconWrapper>;
+        const Droplet = (props) => <IconWrapper {...props}><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></IconWrapper>;
+        const Zap = (props) => <IconWrapper {...props}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></IconWrapper>;
+        const Thermometer = (props) => <IconWrapper {...props}><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></IconWrapper>;
+        const Layers = (props) => <IconWrapper {...props}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></IconWrapper>;
+        const Phone = (props) => <IconWrapper {...props}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.27-2.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></IconWrapper>;
+        const User = (props) => <IconWrapper {...props}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></IconWrapper>;
+        const Presentation = (props) => <IconWrapper {...props}><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></IconWrapper>;
+
+        // ============================================================================
+        // DỮ LIỆU CÂU HỎI (ĐÃ CẬP NHẬT ĐÁP ÁN)
+        // ============================================================================
+        const FULL_DATA = [
+          [1, "Cytoskeleton (Khung tế bào) trong tế bào thực vật có vai trò:", "Tổng hợp protein", "Định hình cấu trúc tế bào và tạo điều kiện cho vận chuyển", "Phiên mã di truyền", "Vận chuyển điện tử", "b"],
+          [2, "Màng plasma của tế bào có chức năng:", "Định hình cấu trúc tế bào", "Tạo độ cứng cho tế bào", "Kiểm soát sự di chuyển của các chất ra vào tế bào", "Dự trữ chất béo", "c"],
+          [3, "Thành phần nào sau đây KHÔNG thuộc thành phần của thành tế bào thực vật:", "Cellulose", "Pectin", "Hemicellulose", "Tubulin", "d"],
+          [4, "Chức năng của cutin trong thực vật là:", "Hỗ trợ vận chuyển dinh dưỡng", "Hạn chế sự mất nước và tạo rào chắn bảo vệ", "Dự trữ carbohydrate", "Hỗ trợ quang hợp", "b"],
+          [5, "Suberin chủ yếu được tìm thấy ở cấu trúc nào của cây:", "Lá", "Cuống lá", "Rễ", "Cánh hoa", "c"],
+          [6, "Callose được tích tụ trong tế bào thực vật khi:", "Khi tế bào phân chia", "Khi thực vật gặp điều kiện bị tổn thương", "Khi thực vật có sự chuyển pha", "Khi thực vật bị thiếu nước", "b"],
+          [7, "Vai trò của pectin trong tế bào thực vật là gì?", "Cung cấp độ cứng cho thành tế bào", "Liên kết nước và góp phần tạo sự linh hoạt cho thành tế bào", "Lưu trữ carbohydrate", "Thực hiện quang hợp", "b"],
+          [8, "Protein động cơ tạo động lực giúp các khối vật chất di chuyển dọc theo các vi ống có tên gọi là:", "Casein", "Kinesins", "Myosins", "Actins", "b"],
+          [9, "Vi ống (Microtubules) trong tế bào thực vật chủ yếu được cấu tạo từ loại protein có tên gọi là:", "Actin", "Tubulin", "Keratin", "Myosin", "b"],
+          [10, "Loại mô nào chịu trách nhiệm tạo ra sự gia tăng đường kính thân cây:", "Nhu mô", "Mô phân sinh đỉnh", "Tượng tầng", "Mô phân sinh bên", "d"], 
+          [11, "Thành phần nào hình thành cấu trúc chính của vách tế bào thực vật:", "Amylose", "Hemicellulose", "Cellulose", "Pectin", "c"],
+          [12, "Cấu tử nào chịu trách nhiệm chính trong việc phân hủy những protein không cần thiết trong tế bào:", "Proteasome", "Lục lạp", "Ribosome", "Không bào", "a"],
+          [13, "Thuật ngữ nào dành cho dòng vận chuyển nước và chất hòa tan xuyên qua tế bào chất:", "Apoplast", "Cytoskeleton", "Plasmodesmata", "Symplast", "d"],
+          [14, "Thuật ngữ nào dành cho dòng vận chuyển nước và chất hòa tan qua các khoảng gian bào:", "Apoplast", "Plasmodesmata", "Symplast", "Cytoskeleton", "a"],
+          [15, "Chức năng của Chromoplast ở thực vật là:", "Quang hợp", "Dự trữ tinh bột và lipid", "Tích tụ sắc tố", "Dự trữ chất béo", "c"],
+          [16, "Chức năng của Elaioplast ở thực vật là:", "Quang hợp", "Dự trữ tinh bột", "Tích tụ sắc tố", "Dự trữ chất béo", "d"],
+          [17, "Kết quả của hiện tượng tế bào tự chết theo chương trình (PCD) có thể là:", "Cây bị chết không thể phục hồi", "Cây định dạng một số kiểu hình", "Cây dừng sinh sản", "Cây bước sang giai đoạn sinh sản", "b"],
+          [18, "Tế bào khu vực sau thường là tế bào chết:", "Tượng tầng", "Biểu bì", "Mạch nhựa (Phloem)", "Mạch dẫn nước (Xylem)", "d"],
+          [19, "Tế bào khu vực sau có tính chất của tế bào phân sinh:", "Mạch dẫn nước (Xylem)", "Mạch nhựa (Phloem)", "Tượng tầng", "Biểu bì", "c"],
+          [20, "Tế bào mô phân sinh thường không có thành phần sau:", "Ty thể", "Không bào", "Ribosome", "Nhân", "b"],
+          [21, "Thành tế bào của mô phân sinh thường sẽ có đặc điểm:", "Dày", "Mỏng", "Vừa", "Tùy điều kiện", "b"],
+          [22, "Tế bào mô phân sinh thường sẽ có kích thước:", "To", "Nhỏ", "Vừa", "Tùy điều kiện", "b"],
+          [23, "Osmoprotectants là thuật ngữ có nghĩa là:", "Các chất bảo vệ tế bào", "Các chất giúp duy trì áp suất thẩm thấu tế bào", "Các chất thứ cấp trong tế bào", "Các chất điều hòa sinh trưởng", "b"],
+          [24, "Potassium là từ tiếng Anh dành cho nguyên tố dinh dưỡng nào sau đây:", "Đạm", "Lân", "Kali", "Kẽm", "c"],
+          [25, "Zinc là từ tiếng Anh dành cho nguyên tố dinh dưỡng nào sau đây:", "Kẽm", "Bo", "Đạm", "Lân", "a"],
+          [26, "Copper là từ tiếng Anh dành cho nguyên tố dinh dưỡng nào sau đây:", "Đạm", "Sắt", "Lân", "Đồng", "d"],
+          [27, "Cụm từ tiếng Anh nào dùng cho kỹ thuật cung cấp dinh dưỡng qua lá:", "Leaf Feeding", "Leaf application", "Foliar feeding", "Fertigation", "c"],
+          [28, "Cụm từ tiếng Anh nào dùng cho kỹ thuật cung cấp dinh dưỡng qua nước tưới:", "Foliar feeding", "Fertigation", "Leaf Feeding", "Leaf application", "b"],
+          [29, "Cụm từ tiếng Anh nào dùng cho dạng phân bón chậm tan:", "Slow fertilizers", "Liquid fertilizers", "Solid fertilizers", "Controlled-Release Fertilizers", "d"],
+          [30, "Cụm từ tiếng Anh nào dùng cho phân bón vô cơ:", "Liquid fertilizers", "Granule fertilzers", "Organic fertilizers", "Inorganic fertilizers", "d"],
+          [31, "Cụm từ tiếng Anh nào dùng cho phân bón hữu cơ:", "Liquid fertilizers", "Granule fertilzers", "Organic fertilizers", "Inorganic fertilizers", "c"],
+          [32, "Cụm từ tiếng Anh nào dùng cho phân bón dạng viên:", "Liquid fertilizers", "Granule fertilzers", "Organic fertilizers", "Inorganic fertilizers", "b"],
+          [33, "Cụm từ tiếng Anh nào dùng cho phân bón dạng lỏng:", "Liquid fertilizers", "Granule fertilzers", "Organic fertilizers", "Inorganic fertilizers", "a"],
+          [35, "Hiệu quả sử dụng nước được viết tắt theo tiếng Anh là:", "NUE", "NLU", "TUE", "WUE", "d"],
+          [36, "Hiệu quả sử dụng dinh dưỡng được viết tắt theo tiếng Anh là:", "NUE", "NLU", "TUE", "WUE", "a"],
+          [37, "Từ tiếng Anh nào dùng cho kỹ thuật tưới nhỏ giọt:", "Drip irrigation", "Spraing irrigation", "Sprinkler Irrigation", "Spray Nozzle Irrigation", "a"],
+          [38, "Thylakoid là thuật ngữ dùng để gọi đối với:", "Các chất thứ cấp do lá tiết ra", "Lớp màng chuyên trách gắn kết với sắc tố và bộ máy cấu trúc quang hợp", "Bề mặt nhám của lá", "Gân lá", "b"],
+          [39, "Từ tiếng Anh nào dùng cho kỹ thuật canh tác thủy canh:", "Hydroponics", "Aeroponics", "Water cultivation", "Aquaponics", "a"],
+          [40, "Từ tiếng Anh nào dùng cho hiện tượng lá cây bị các đốm vàng gây ra do thiếu một loại dinh dưỡng nào đó:", "Leaf chlorosis", "Leaf wilting", "Leaf curling", "Leaf browning", "a"],
+          [41, "Cụm từ tiếng Anh nào dùng cho hiện tượng thiếu dinh dưỡng:", "Nutrient deficiency", "Nutrient absence", "Nutrient lack", "Nutrient not enogh", "a"],
+          [42, "Chữ CAM trong nhóm thực vật CAM là từ viết tắt của:", "Crassulacean Acid Metabolism", "Cambium Acid Metabolism", "Crotia Area Metabolism", "Crucial Acid Metabolism", "a"],
+          [43, "Bundle Sheath Cells là thuật ngữ tiếng anh dùng cho:", "Các tế bào bó mạch", "Các tế bào biểu bì", "Các tế bào mạch dẫn", "Các tế bào bẹ lá", "a"],
+          [44, "Guard Cells là thuật ngữ dùng cho loại tế bào hình thành nên cấu trúc của:", "Biểu bì lá", "Lông hút", "Khí khổng/Khí khẩu", "Cuống lá", "c"],
+          [45, "Aquaporin là protein đóng vai trò trong:", "Điều tiết sự hút nước", "Điều tiết sự hút CO2", "Điều tiết sự hút O2", "Điều tiết sự hút đạm", "a"],
+          [46, "Diffusion là thuật ngữ tiếng Anh dùng cho:", "Quá trình thẩm thấu các chất qua màng tế bào", "Quá trình đóng khí khổng", "Quá trình mở khí khổng", "Quá trình mao dẫn nước trong thân cây", "a"],
+          [47, "Vacuole là thuật ngữ tiếng Anh của:", "Khí khổng", "Không bào", "Ty thể", "Lục lạp", "b"],
+          [48, "Bào quan nào đảm nhiệm vai trò sinh tổng hợp Protein:", "Không bào", "Ty thể", "Ribosome", "Golgi", "c"],
+          [49, "Thuật ngữ tiếng Anh của Nguyên tố dinh dưỡng đa lượng là:", "Beneficial Elements", "Essential Elements", "Macronutrients", "Micronutrients", "c"],
+          [50, "Thuật ngữ tiếng Anh của Nguyên tố dinh dưỡng vi lượng là:", "Macronutrients", "Micronutrients", "Beneficial Elements", "Essential Elements", "b"],
+          [51, "Thuật ngữ tiếng Anh của Nguyên tố dinh dưỡng có lợi là:", "Macronutrients", "Micronutrient", "Beneficial Elements", "Essential Elements", "c"],
+          [52, "Thuật ngữ tiếng Anh của Nguyên tố dinh dưỡng thiết yếu là:", "Macronutrients", "Micronutrient", "Beneficial Elements", "Essential Elements", "d"],
+          [53, "Plasmodesmata là cửa kết nối của:", "Của các tế bào với nhau", "Của lá với không khí", "Của thân với không khí", "Của mạch", "a"],
+          [54, "Endoplasmic Reticulum là thuật ngữ tiếng Anh dùng cho:", "Lưới nội chất trong tế bào", "Bộ khung tế bào", "Màng tế bào", "Thành tế bào", "a"],
+          [55, "Membrane là thuật ngữ tiếng Anh dùng cho:", "Lưới nội chất trong tế bào", "Bộ khung tế bào", "Màng tế bào", "Thành tế bào", "c"],
+          [56, "Thuật ngữ tiếng Anh của Ty thể là:", "Mitochondria", "Chloroplast", "Amyloplast", "Chromoplast", "a"],
+          [57, "Cytochrome là protein chính hình thành nên:", "Chuỗi vận chuyển điện tử trong quang hợp", "Chuỗi vận chuyển điện tử trong hô hấp", "Cơ quan cảm ứng ánh sáng", "Chuỗi hấp thu dinh dưỡng", "b"],
+          [58, "Thuật ngữ tiếng Anh của Lục lạp là:", "Mitochondria", "Chloroplast", "Amyloplast", "Chromoplast", "b"],
+          [59, "Bào quan nào sau đây có vai trò là nơi chứa sắc tố:", "Mitochondria", "Chloroplast", "Amyloplast", "Chromoplast", "d"],
+          [60, "Bào quan nào sau đây có vai trò là nơi chứa tinh bột:", "Mitochondria", "Chloroplast", "Amyloplast", "Chromoplast", "c"],
+          [61, "Mạch dẫn các chất đồng hóa trong cây còn được gọi là:", "Xylem", "Phloem", "Cambium", "Trichome", "b"],
+          [62, "Mạch dẫn nước trong cây còn được gọi là:", "Xylem", "Phloem", "Cambium", "Trichome", "a"],
+          [63, "Từ tiếng Anh dùng cho vùng tế bào chính yếu thực hiện hoạt động quang hợp là:", "Cuticle", "Epidermis", "Palisade Mesophyll", "Spongy Mesophyll", "c"],
+          [64, "Transpiration là thuật ngữ tiếng Anh dùng cho quá trình:", "Hô hấp", "Bốc thoát hơi nước", "Hấp thu nước", "Quang hô hấp", "b"],
+          [65, "Bộ máy quang hợp ở thực vật có:", "1 kiểu Photosystem (PS)", "2 kiểu Photosystem gồm PS1 và PS2", "3 kiểu Photosystem", "4 kiểu Photosystem", "b"],
+          [66, "Trong quá trình quang hợp, H2O sẽ được quang phân ly theo cách sau:", "H2O -> 2H+ + 2e- + 1/2 O2", "H2O -> 2H+ + 1/2 O2", "H2O -> H+ + OH-", "H2O -> 2H+ + 2O", "b"],
+          [67, "Trong quá trình Quang phosphoryl hóa không vòng thì:", "NADPH được hình thành ở PS1", "NADPH được hình thành ở PS2", "NADPH được hình thành ở cả PS1 và PS2", "NADH được hình thành ở cả P2", "a"],
+          [68, "Trong quá trình Quang phosphoryl hóa không vòng thì:", "Điện tử không dịch chuyển giữa PS1 và PS2", "Điện tử được vận chuyển từ PS1 sang PS2", "Điện tử được vận chuyển từ PS2 sang PS1", "Điện tử vận chuyển 2 chiều", "c"],
+          [69, "Thuật ngữ Photosystem (PS) dùng để chỉ:", "Đơn vị cấu trúc đóng vai trò hấp thụ ánh sáng quang hợp", "Nhu cầu ánh sáng", "Ngưỡng ánh sáng", "Hệ thống tổ chức quang hợp", "a"],
+          [70, "Ở thực vật Statolith có vai trò là:", "Giúp cây hướng dinh dưỡng", "Giúp cây hướng nước", "Giúp cây hướng quang", "Giúp cây có khả năng hướng địa", "d"],
+          [71, "Tế bào đóng vai trò chính tạo ra cơ chế đóng mở khí khổng còn được gọi là:", "Tế bào đóng", "Tế bào mở", "Tế bào bảo vệ", "Cả 3 đều đúng", "c"],
+          [72, "Trong quá trình quang hợp, H2O được hình thành thông qua quá trình:", "Photolysis", "Photorespiration", "Photooxidation", "Photophosphorylation", "a"],
+          [73, "Cơ chế đóng mở của Khí khổng/Khí Khẩu liên quan trực tiếp đến sự vận động của:", "2 tế bào", "2 tế bào bảo vệ", "4 tế bào", "Nhiều tế bào", "b"],
+          [74, "Tên gọi chu trình nào sau đây không đồng nghĩa với 3 tên gọi còn lại:", "Chu trình Citric Acid", "Chu trình TCA", "Chu trình Calvin", "Chu trình Krebs", "c"],
+          [75, "Thuật ngữ 'Pha sáng' trong quá trình quang hợp có tên tiếng Anh là:", "Light Reactions", "Light Phase", "Light-dependent Reactions", "Light-independent Reactions", "c"],
+          [76, "Quá trình nào sau đây diễn ra phổ biến ở thực vật C3 mà không diễn ra ở thực vật C4", "Photorespiration", "Photosynthesis", "Photomorphogenesis", "Photoinhibition", "a"],
+          [77, "Quá trình quang hợp có tên tiếng Anh là:", "Photoperiod", "Photorespiration", "Photosynthesis", "Photogenesis", "c"],
+          [78, "Quá trình quang hô hấp có tên tiếng Anh là:", "Photoperiod", "Photorespiration", "Photosynthesis", "Photogenesis", "b"],
+          [79, "Quá trình Quang phosphoryl hóa vòng có từ tiếng Anh là:", "Cyclic Photorespiarion", "Non-Cyclic Photorespiarion", "Non-Cyclic Photophosphorylation", "Cyclic Photophosphorylation", "d"],
+          [80, "Hệ thống hấp thu ánh sáng quang hợp (Hệ thống quang hóa) ở thực vật có:", "1 kiểu cấu trúc", "2 kiểu cấu trúc", "3 kiểu cấu trúc", "4 kiểu cấu trúc", "b"],
+          [81, "Hoạt chất bảo vệ thực vật sau tại ra hiệu quả trừ sâu thông qua cơ chế:", "Ức chế Chu trình Kreb", "Ức chế Chu trình Calvin", "Ức chế chuỗi Đường phân", "Ức chế chuỗi vậy chuyển điện tử trong ty thể", "d"],
+          [82, "Hô hấp yếm khí ở thực vật không trực tiếp hình thành:", "Alanine", "Acid Citric", "Acid Lactic", "Ethanol", "b"],
+          [83, "Từ tiếng Anh nào tương ứng với khái niệm nguyên tố dinh dưỡng đa lượng:", "Macro-element", "Micro-element", "Essential element", "Benefital element", "a"],
+          [84, "Từ tiếng Anh nào tương ứng với khái niệm nguyên tố dinh dưỡng vi lượnng:", "Macro-element", "Micro-element", "Essential element", "Benefital element", "b"],
+          [85, "Từ tiếng Anh nào tương ứng với khái niệm nguyên tố dinh dưỡng thiết yếu (cần thiết)", "Impotant element", "Need element", "Essential element", "Benefital element", "c"],
+          [86, "Từ tiếng Anh nào tương ứng với khái niệm nguyên tố dinh dưỡng có lợi", "Impotant element", "Micro-element", "Essential element", "Benefital element", "d"],
+          [87, "Loại trái cây nào sau đây không tăng mạnh tốc độ hô hấp trước khi chin:", "Loại trái Climateric", "Loại trái Non-Climateric", "Loại trái có vỏ dày", "Loại trái có vỉ mỏng", "b"],
+          [88, "Loại trái cây nào sau đây có sự tăng bột phát hô hấp trước khi chin:", "Loại trái Climateric", "Loại trái Non-Climateric", "Loại trái có vỏ dày", "Loại trái có vỉ mỏng", "a"],
+          [89, "Thông thường hệ số Q10 trong hô hấp thực vật nằm trong khoảng:", "1 đến 1,5", "1,5 đến 2", "2 đến 2,5", "2,5 đến 3", "c"],
+          [90, "Điểm bão hóa ánh sáng là:", "Mức cường độ ánh sáng nếu thấp hơn sẽ gây hại", "Mức cường độ ánh sáng nếu vượt qua sẽ gây hại cho bộ máy quang hợp", "Mức cường độ ánh sáng giúp cường độ quang hợp tối đa", "Mức cường độ ánh sáng nếu cần thiết cho quang hợp", "c"],
+          [91, "Điểm bù ánh sáng là:", "Mức cường độ ánh sáng mà lượng CO2 hấp thu = lượng CO2 thải ra", "Cao hơn điểm bão hòa ánh sáng", "Mức cường độ ánh sáng mà quang hợp tối đa", "Thấp hơn điểm bù ánh sáng", "a"],
+          [92, "Để cây tăng trường thì cường độ chiếu sáng cần:", "Thấp hơn điểm bù ánh sáng", "Cao hơn điểm bù và thấp hơn điểm bão hòa ánh sáng", "Cao hơn điểm bão hòa và thấp hơn điểm bù ánh sáng", "Mức cường độ ánh sáng mà", "b"],
+          [93, "Stay-green trait là:", "Tính trạng lá có màu xanh", "Tính trạng lá có màu đỏ", "Tính trạng lá có vàng", "Tính trạng lá duy trì màu xanh kéo dài", "d"],
+          [94, "Dạng đạm hấp thu tốt nhất đối với thực vật là:", "NH4+", "NO3-", "N2", "NO2-", "b"],
+          [95, "Lân (Phosphate) có ý nghĩa lớn nhất trong vấn đề:", "Năng lượng của tế bào", "Kéo dài tế bào", "Sức trương của tế bào", "Vận chuyển trong tế bào", "a"],
+          [96, "Calci (Ca) có ý nghĩa lớn nhất trong số các vai trò sau:", "Cân bằng ion trong tế bào", "Màng ngăn trong tế bào", "Hình thành tinh bột", "Tín hiệu của tế bào", "d"],
+          [97, "Sắt (Fe) có ý nghĩa lớn nhất trong số các vai trò sau:", "Cân bằng ion trong tế bào", "Màng ngăn trong tế bào", "Truyền điện tử trong tế bào", "Tạo sắc tố tế bào", "c"],
+          [98, "Lân (Phosphate) có ý nghĩa lớn nhất trong số các vai trò sau:", "Cân bằng ion trong tế bào", "Màng ngăn trong tế bào", "Hình thành tinh bột trong tế bào", "Tín hiệu của tế bào", "b"],
+          [99, "Ma-nhê (Mg) có ý nghĩa lớn nhất trong số các vai trò sau:", "Cân bằng ion trong tế bào", "Màng ngăn trong tế bào", "Tạo sức trương tế bào", "Sắc tố quang hợp", "d"],
+          [100, "Lân (Phosphate) có ý nghĩa lớn nhất trong số các vai trò sau:", "Phân chia tế bào", "Hình thành sắc tố trong tế bào", "Hướng quang cho tế bào", "Là thành phần chất điều hòa sinh trưởng tế bào", "a"],
+          [101, "Chỉ số diện tích lá tối ưu cho cây trồng:", "Nên bằng 1", "Nên trong khoảng từ 0,9-1", "Nằm trong khoảng từ 3-7", "Nên trong khoảng từ 1-2", "c"],
+          [102, "Pha sáng của quang hợp sản sinh ra:", "NADH", "NADPH", "C6H12O6", "B & C đúng", "b"],
+          [103, "Chlorophyll hấp thu tốt nhất ánh sáng có màu:", "Xanh lá cây", "Vàng", "Xanh dương (Blue/Red range)", "Đỏ", "c"],
+          [104, "Nguyên tử nằm ở vị trí trung tâm phân tử chlorophyll là:", "N", "K", "Mg", "Mn", "c"],
+          [105, "Chỉ số diện tích lá ở một quần thể cây trồng quá cao thì:", "Quang hợp trở nên dư thừa", "Tỉ lệ quang hợp/hô hấp quá cao", "Tỉ lệ hô hấp/quang hợp quá cao", "Khả năng thoát hơi nước khó khăn", "c"],
+          [106, "Mô phân sinh đỉnh của thực vật thường:", "Có tế bào lớn nhưng được bao bọc kỹ lưỡng", "Tế bào nhỏ, khả năng dãn nở & phân chia cao", "Chứa đầy đủ tất cả các chất điều hòa sinh trưởng cần", "Có khả năng tự túc được năng lượng sinh học", "b"],
+          [107, "Khi trời nóng (trên 35°C) thì quá trình quang hợp của nhóm thực vật nào sau đây sẽ bị tổn thương nhiều nhất:", "Nhóm thực vật C3", "Nhóm thực vật C4", "Nhóm thực vật CAM", "Cả nhóm thực vật C3 & C4", "a"],
+          [108, "Lân được hấp thụ nhiều nhất ở dạng:", "P2O5", "HPO4 2-", "PO4 3-", "A & C đúng", "b"],
+          [109, "Vách tế bào có thể bền vững hơn nhờ vai trò của:", "Bo", "Cu", "Fe", "Zn", "a"],
+          [110, "Khả năng chống đỡ của cây trồng tăng lên nếu có đầy đủ:", "Bo", "Mo", "Fe", "Cu", "d"],
+          [111, "Zn có vai trò đặc biệt đối với:", "Sự hình thành hạt", "Sự hình thành hạt phấn", "Sự vững chắc vách tế bào", "Sự đồng hóa đạm", "d"],
+          [112, "Nguyên tố nào sau đây khó có khả năng vận chuyển từ lá già sang lá non:", "N", "K", "Ca", "Mg", "c"],
+          [113, "Nguyên tố nào sau đây không tham gia vào thành phần protein:", "N", "P", "K", "S", "c"],
+          [114, "Molibden có vai trò đặc biệt đối với:", "Sự hình thành hạt", "Sự hình thành hạt phấn", "Sự vững chắc vách tế bào", "Sự đồng hóa đạm", "d"],
+          [115, "Triệu chứng nào sau đây thường không phải là triệu chứng mất cân bằng dinh dưỡng:", "Lá cháy khô", "Lá & đọt non bị thui đen", "Rễ quăn & ngắn", "Rễ có bướu", "d"],
+          [116, "Triệu chứng nào sau đây thường không phải là triệu chứng mất cân bằng dinh dưỡng:", "Trái nứt", "Trái rụng", "Trái bị đốm đen", "Trái bị lỗ đen (do sâu bệnh)", "d"],
+          [117, "Molibden có vai trò quan trọng trong:", "Phát động hoa phát triển", "Đồng hóa đạm tự do", "Truyền tín hiệu khi có sinh vật gây hại", "Đồng hóa CO2 trong quang hợp", "b"],
+          [118, "Trong điều kiện kị khi hoàn toàn, tế bào có thể tạo ra:", "CO2 và Acid Citric", "CO2 và Ethanol", "Ethanol, Acid Lactic hoặc Alanine", "H2O và acid Lactic hoặc Acid Citric", "c"],
+          [119, "Nguyên lý chung của quá trình hoạt động của ty thể là:", "Hấp thu năng lượng ánh sáng để tổng hợp hữu cơ", "Chuyển đổi hữa cơ thành năng lượng hóa học", "Hấp thu năng lượng ánh sáng và oxi hóa chất hữu cơ", "Hình thành oxygen phục vụ cho các nhu cầu khác", "b"],
+          [120, "Thực vật C3 bao gồm:", "Tất cả các thực vật xuất xứ vùng ôn đới", "Tất cả thực vật vùng nhiệt đới", "Các cây như lúa, bắp, bắp cải", "Các cây như xoài, nhãn...", "a"],
+          [121, "Thực vật C4 bao gồm:", "Rau dền, mía, bắp", "Lúa, bắp, mía", "Đậu, bắp cải, chuối", "Ớt, hoa hồng, bắp cải", "a"],
+          [122, "Thực vật CAM có đặc điểm:", "Tốc độ sinh trưởng cao", "Tốc độ bốc thoát hơi nước cao", "Năng suất sinh khối cao", "Hiệu quả sử dụng nước cao", "d"],
+          [123, "Để đạt được chỉ số diện tích lá tối ưu cần phải:", "Khống chế mật độ & chăm sóc hợp lý", "Luôn luôn cung cấp dinh dưỡng cho cây", "Có biện pháp cắt tỉa lá thường xuyên", "Chọn giống tốt", "a"],
+          [124, "Khi thiết kế một hệ thống xen canh thì các cây trồng cần phải:", "Có đòi hỏi về ánh sáng tương tự nhau", "Có đòi hỏi về cường độ chiếu sáng khác nhau", "Không cản trở sự hấp thu ánh sáng của nhau", "Có tán lá không giao nhau", "c"],
+          [125, "Tế bào bó mạch của thực vật:", "Không tham gia vào hoạt động quang hợp", "Có tham gia vào hoạt động quang hợp", "Chỉ đóng vai trò phụ trong hoạt động quang", "Cần cho hoạt động quang hợp ở thực vật C4", "d"],
+          [126, "Hệ thống quang hợp ở thực vật có:", "01 loại hệ thống quang hóa", "02 loại hệ thống quang hóa", "03 loại hệ thống quang hóa", "Rất nhiều loại hệ thống quang hóa", "b"],
+          [127, "Trong điều kiện bình thường thì hoạt động quang hợp sẽ:", "Sử dụng đồng thời cả 2 kiểu quang phosphoryl hóa", "Sử dụng quá trình quang phosphoryl hóa vòng", "Sử dụng quá trình qu quang phosphoryl hóa không vòng", "Sử dụng luân phiên giữa 2 kiểu quang phosphoryl hóa", "a"],
+          [128, "Pha sáng của quang hợp cần được cung cấp trực tiếp:", "Ánh sáng và CO2", "Ánh sáng và H2O", "Ánh sáng và ATP", "Ánh sáng và NADPH", "b"],
+          [129, "Pha tối của quang hợp cần được cung cấp trực tiếp:", "Đường và CO2", "CO2 và H2O", "CO2 và ATP", "H2O và ATP", "c"],
+          [130, "Một hệ thống quang hóa là:", "Sự kết hợp ngẫu nhiên các sắc tố", "Sự kết hợp các sắc tố xung quanh một phân tử Chlorophyll a trung tâm", "Tổ hợp các enzyme", "Sắc tố thu nhận ánh sáng", "b"],
+          [131, "Quá trình quang phosphoryl hóa xảy ra:", "Ở ti thể của thực vật", "Ở ti thể của tế bào lá", "Ở lục lạp", "Cả 3 câu trên đều đúng", "c"],
+          [132, "Ở thực vật C4, enzyme Rubisco phân bố tập trung ở:", "Tế bào bó mạch", "Tế bào thịt lá", "Biểu bì lá", "Rải rác đều trong lá", "a"],
+          [133, "Vách tế bào thực vật:", "Có cấu trúc khảm", "Có cấu trúc dạng các bỏ sợi đan xen", "Gồm nhiều lớp chồng lên nhau", "Được thay đổi liên tục", "b"],
+          [134, "Màng tế bào:", "Có nhiều lớp", "Có 2 lớp phospholipid", "Có protein rải rác đan xen trên 2 lớp phospholipid", "Có cấu trúc kín tuyệt đối", "c"],
+          [135, "Khái niệm hạn sinh lý là:", "Hạn xảy ra ở giai đoạn trổ hoa", "Hạn chỉ ảnh hưởng đến một số hoạt động sinh lý, không làm chết cây", "Hạn do cây không hút được nước trong khi có sẵn nước", "Hạn xảy ra ở giai đoạn cây con", "c"],
+          [136, "Các protein trên màng tế bào thường đóng vai trò:", "Truyền nhận tín hiệu", "Vận chuyển các chất", "Bảo vệ chống sinh vật gây hại", "a & b đúng", "d"],
+          [137, "Vách tế bào có thể bền vững hơn nhờ vai trò của:", "Nitrogen", "Kali", "Phosphore", "Calcium", "d"],
+          [138, "Vách tế bào có thể bền vững hơn nhờ vai trò của:", "Bo", "Cu", "Fe", "Zn", "a"],
+          [139, "Trái cây thường sẽ ngọt hơn nếu cung cấp đầy đủ:", "Nitrogen", "Kali", "Phosphore", "Calcium", "b"],
+          [140, "Quá trình cố định đạm sinh học sẽ được cải thiện nếu môi trường đất:", "Có đạm NH4 dồi dào", "Có đạm NO3 dồi dào", "Có Mn đầy đủ", "Có Mo đầy đủ", "d"],
+          [141, "Khí khổng đóng mở được kiểm soát bởi:", "Sự điều tiết hàm lượng ion và nước", "Sự vận chuyển carbohydrate", "Sự cảm ứng ánh sáng", "Độ ẩm không khí", "a"],
+          [142, "Cấu trúc khí không bao gồm:", "1 tế bào duy nhất", "Nhiều tế bào có cùng cấu trúc & chức năng", "2 tế bào canh giữ và các tế bào kèm", "4 tế bào", "c"],
+          [143, "Sự hấp thu các nguyên tố dinh dưỡng khoáng:", "Có tính độc lập với nhau", "Đôi khi có quan hệ hỗ trợ", "Đôi khi có quan hệ đối kháng", "b & c đều đúng", "d"],
+          [144, "Nguyên tố vi lượng thường có chức năng:", "Tham gia hoạt hóa các enzyme", "Xây dựng cấu trúc tế bào", "Xây dựng nên sinh khối tế bào", "Điều tiết áp suất thẩm thấu tế bào", "a"],
+          [145, "Con người có thể tạo được cơ thể thực vật hoàn chỉnh từ nuôi cấy 1 tế bào duy nhất bởi vì:", "Tế bào thực vật có cấu trúc đơn giản", "Tế bào thực vật có tính toàn năng (toàn thể)", "Tế bào thực vật có khả năng quang hợp", "Tế bào thực vật có cellulose", "b"],
+          [146, "Hiện tượng tế bào tự chết theo chương trình (PCD) ở thực vật:", "Một phản ứng rất tiêu cực", "Dấu hiệu đầu tiên của sự bị hủy diệt", "Cần thiết cho một số quá trình biệt hóa và đề kháng", "Báo hiệu sự kém thích nghi với môi trường sống", "c"],
+          [147, "Sự tồn tại của thực vật cần:", "Khoảng 8 nguyên tố dinh dưỡng", "Khoảng 18 nguyên tố dinh dưỡng", "Khoảng 28 nguyên tố dinh dưỡng", "Khoảng 38 nguyên tố dinh dưỡng", "b"],
+          [148, "Khi không được cung cấp đủ phosphate thực vật sẽ gặp khó khăn nhiều nhất trong việc:", "Tổng hợp acid nucleic", "Hình thành protein và enzyme", "Hình thành vách cellulose", "Hình thành các chất béo", "a"],
+          [149, "Hoạt động hô hấp của cây trồng có xu hướng giảm khi:", "Nhiệt độ tăng", "CO2 tăng", "Oxygen tăng", "Ethylene tăng", "b"],
+          [150, "Hô hấp ở cây xanh khi không sử dụng nguyên liêu đầu tiên là đường Hexose mà sử dụng nguyên liệu là Tinh bột, Dầu hoặc Protein thì điều đó:", "Là biểu hiện tốt về sinh trưởng của cây", "Là biểu hiện xấu về sinh trưởng của cây", "Chỉ xảy ra khi hạt nảy mầm", "Chỉ xảy ra khi hình thành hạt", "b"],
+          [151, "Biện pháp trồng cây chắn gió cho đồng ruộng có thể làm cho:", "Hạn chế đổ ngã", "Giảm tiêu thụ nước", "Giảm quang hợp", "A & B đều đúng", "d"],
+          [152, "Khi trái cây bị hư hỏng ở vỏ trái thì nguyên nhân hàng đầu có thể là:", "Thiếu Phosphore", "Thiếu Calcium", "Thiếu Magnesium", "Thiếu Đạm", "b"],
+          [153, "Vật chất tồn tại nhiều nhất trong vách tế bào là:", "Polysaccharide", "Acid amin", "Phospholipid", "Protein", "a"],
+          [154, "Vật chất tồn tại nhiều nhất trong màng tế vào là:", "Polysaccharide", "Acid amin", "Phospholipid", "Protein", "c"],
+          [155, "Thực vật còn sống thì:", "Tất cả các tế bào là tế bào sống", "Hầu hết tế bào là tế bào sống", "Luôn tìm cách đào thải các tế bào chết", "Cả 3 câu trên đều đúng", "b"],
+          [156, "Cung cấp dinh dưỡng qua lá có ưu điểm là:", "Cung cấp được nhiều", "Hiệu quả lâu, bền", "Hiệu quả nhanh", "Áp dụng được cho mọi loại phân bón", "c"],
+          [157, "Cung cấp dinh dưỡng qua lá có nhược điểm là:", "Cung cấp không được nhiều & phải tiến hành nhiều lần", "Hiệu quả chậm", "Làm bộ rễ bị thoái hóa", "Tốn nước", "a"],
+          [158, "Nguyên tố nào sau đây được coi là nguyên tố có lợi đối với thực vật:", "N, Ni, Na", "Si, Au, Ca", "Si, Na, Se", "Cả 3 câu trên đều đúng", "c"],
+          [159, "Ty thể có đặc thù là:", "Có hạt grana", "Có chứa các enzyme tham gia đồng hóa CO2", "Có màng trong gấp khúc", "Có màng ngoài gấp khúc", "c"],
+          [160, "Việc chuyền thông tin di truyền ở lục lạp và ty thể:", "Theo qui luật di truyền Mendel", "Không theo qui luật di truyền Mendel", "Thay đổi tùy theo điều kiện sống", "Chỉ xảy ra ở lá", "b"],
+          [161, "Hệ số hô hấp là:", "Tỉ lệ giữa hô hấp và quang hợp", "Tỉ số giữa hô hấp và lượng hơi nước bốc thoát", "Tỉ lệ giữa CO2 thải ra và O2 hấp thụ", "Ti lệ giữa CO2 hấp thu và O2 phóng thích", "c"],
+          [162, "Expansin là tên của:", "Một chất điều hòa sinh trưởng thực vật", "Một enzyme ảnh hưởng trực tiếp đến sự phát triển kích thước tế bào", "Một yếu tố tác động lên khả năng chống đỡ của thực vật", "Là enzyme đồng hóa trong quá trình quang hợp", "b"],
+          [163, "Rubisco là tên gọi của:", "Một chất điều hòa sinh trưởng thực vật", "Một enzyme ảnh hưởng trực tiếp đến sự phát triển kích thước tế bào", "Một yếu tố tác động lên khả năng chống đỡ của thực vật", "Enzyme tham gia đồng hóa trong quá trình quang hợp", "d"],
+          [164, "Hiện tượng quang hô hấp có đặc điểm là:", "Giúp cây sử dụng oxygen một cách hiệu quả", "Giúp cho cây quang hợp hiệu quả hơn", "Làm cho cây sử dụng oxygen kém hiệu quả", "Làm cho cây quang hợp kém hiệu quả", "d"],
+          [165, "Nguyên lý chung của quá trình hoạt động của lục lạp là:", "Hấp thu năng lượng ánh sáng để tổng hợp hữu cơ", "Chuyển đổi hữu cơ thành năng lượng hóa học", "Hấp thu năng lượng ánh sáng và oxi hóa chất hữu cơ", "Hình thành oxygen phục vụ cho các nhu cầu khác", "a"],
+          [166, "Nguyên tố nào sau đây khi thiểu lá thường không chuyển màu vàng:", "N", "P", "Mo", "S", "b"],
+          [167, "Nguyên tố nào sau đây khi thiểu triệu chứng sẽ xuất hiện trước ở lá non:", "N", "P", "K", "S", "d"],
+          [168, "Nguyên tố nào sau đây không hiện diện trong thành phần hệ thống hấp thụ ánh sáng trong quang hợp:", "B", "Ca", "Mg", "Mn", "b"],
+          [169, "Khi thân cây bị vết thương, lớp vỏ cây hình thành vết sẹo thường phồng lên trong đó bao gồm các tế bào sẹo (callus); quá trình hình thành khối sẹo này là:", "Quá trình biệt hóa tế bào", "Quá trình phản biệt hóa tế bào", "Quá trình tái biệt hóa tế bào", "Quá phát triển tế bào", "b"],
+          [170, "Các Phytosterol có vai trò giúp cho:", "Thành tế bào bền vững hơn trước tác động của ngoại cảnh", "Màng tế bào bền vững hơn trước tác động của ngoại cảnh", "Khung tế bào bền vững hơn trước tác động của ngoại cảnh", "Các động cơ vân chuyển của tế bào bền vững hơn", "b"],
+          [171, "Myosin và Kinesin là những protein có vai trò trong:", "Dân vách tế bào", "Chuyển động của các tế bào trong mô", "Thụ thể trên bề mặt màng tế bào", "Chuyển động của các bào quan và vật chất bên trong tế bào", "d"],
+          [172, "Bộ khung định hình tế bào chất (Cytoskeleton) và tạo đường dẫn cho sự di chuyển của các bào quan bên trong tế bào được cấu tạo với thành phần gồm:", "Cellulose & Hemicellulose", "Phospholipid & Phytosterol", "Tubolin & Actin", "Protein & RNA", "c"],
+          [173, "Ribosome là bào quan được cấu tạo với thành phần gồm:", "Cellulose & Hemicellulose", "Phospholipid & Phytosterol", "Tubulin & Actin", "Protein & RNA", "d"],
+          [174, "Loại tế bào nào có cấu tạo phù hợp nhất để hình thành cấu trúc nâng đỡ trong cây:", "Parenchyma", "Collenchyma", "Sclerenchyma", "Tế bào phân sinh", "b"],
+          [175, "Loại tế bào nào sau đây sẽ không còn tồn tại tế bào chất:", "Tế bào lá", "Tế bào chóp rễ", "Tế bào mạch gỗ (Xylem)", "Tế bào mạch nhựa (Phloem)", "c"],
+          [176, "Loại vật liệu tế bào thực vật thường sản sinh để bịt kín, ngăn các dòng lây lan vi sinh vật gây hại giữa các tế bào là:", "Cellulose", "Callose", "Xyllose", "Allose", "b"],
+          [177, "Hiện tượng Apoptosis (chết theo chương trình) ở thực vật không có vai trò trong:", "Hình thành mạch gỗ (Xylem)", "Hình thành mạch nhựa (Phloem)", "Hình thành hoa đơn tính", "Hình thành hạt", "a"],
+          [178, "Chỉ số Mật độ dòng Photon Quang hợp [PPFD)] có đơn vị tính là:", "μmol/s", "µmol/J", "µmol/m²/s", "mol/m²/ngày", "c"],
+          [179, "Chỉ số Tổng lượng ánh sáng trong ngày [DLI)] có đơn vị tính là:", "μmol/s", "µmol/J", "µmol/m²/s", "mol/m²/ngày", "d"],
+          [180, "Nhu cầu Tổng lượng ánh sáng trong ngày [DLI)] của các cây trồng phổ biến nằm trong khoảng:", "5-15 mol/m²/ngày", "5-30 mol/m³/ngày", "10-60 mol/m²/ngày", "20-120 mol/m²/ngày", "b"],
+          [181, "Nhu cầu Mật độ dòng Photon Quang hợp [PPFD)] của các cây C3 thường nằm trong khoảng:", "500-1000 µmol/m²/s", "500-1500 µmol/m²/s", "1000-2000 μmol/m2/s", "2000-3000 µmol/m²/s", "a"],
+          [182, "Nhu cầu Mật độ dòng Photon Quang hợp [PPFD)] của các cây C4 thường nằm trong khoảng:", "500-1000 µmol/m²/s", "500-1500 µmol/m²/", "1000-2000 μmol/m2/s", "1500-2000 µmol/m²/s", "c"],
+          [183, "So với ngưỡng hàm lượng CO2 trong khí quyền thì tỉ lệ bổ sung hàm lượng CO2 nào cho phép cây trồng tăng năng suất:", "< 2 lần", "2 - 3 lần", "3-5 lần", "5 - 10 lần", "b"],
+          [184, "Cường độ chiếu sáng mà tại đó tốc độ quang hợp bằng tốc độ hô hấp được gọi là:", "Điểm bù ánh sáng", "Điểm bù quang hợp", "Điểm bù hô hấp", "Điểm bù CO2", "a"],
+          [185, "Ngưỡng hàm lượng CO2 mà tại đó tốc độ quang hợp bằng tốc độ hô hấp được gọi là:", "Điểm bù ánh sáng", "Điểm bù quang hợp", "Điểm bù hô hấp", "Điểm bù CO2", "d"],
+          [186, "Ở cây bắp bộ phận sau không diễn ra hoạt động quang hợp:", "Lá", "Be lá", "Lá bi", "Rễ", "d"],
+          [187, "Ưu điểm của kiểu hình lá thẳng, hướng theo góc >60 độ là:", "Hấp thu dinh dưỡng hiệu quả", "Hấp thu nước hiệu quả", "Quang hợp hiệu quả", "Hô hấp hiệu quả", "c"],
+          [188, "Các sắc tố nhóm carotenoid tham gia vào quá trình sau đây:", "Hỗ trợ hấp thụ nước", "Hỗ trợ hấp thu dinh dưỡng", "Hỗ trợ hoạt động quang hợp", "Hỗ trợ hoạt động hô hấp", "c"],
+          [189, "Xylem là thuật ngữ dùng để chỉ hệ thống mạch dẫn nước và dinh dưỡng khoảng từ rễ lên:", "Lá", "Thân", "Hoa", "Quả", "a"],
+          [190, "Chu trình Xanthophyll/Violaxanthin có ý nghĩa đối với:", "Bảo vệ sự hấp thu dinh dưỡng", "Bảo vệ bộ máy quang hợp", "Bảo vệ hệ thống vận chuyển nước", "Bảo vệ hệ thống hô hấp", "b"],
+          [191, "Source là thuật ngữ dùng để chỉ:", "Các bộ sử dụng dinh dưỡng khoáng ở cây", "Các bộ đóng vai trò tích trữ dinh dưỡng khoáng ở cây", "Các bộ phận đóng vai trò cung cấp chất đồng hóa ở cây", "Các bộ phận tiêu thụ sản phẩm đồng hóa ở cây", "c"],
+          [192, "Sink là thuật ngữ dùng để chỉ:", "Các bộ sử dụng dinh dưỡng khoảng ở cây", "Các bộ đóng vai trò tích trữ dinh dưỡng khoáng ở cây", "Các bộ phận đóng vai trò cung cấp chất đồng hóa ở cây", "Các bộ phận tiêu thụ sản phẩm đồng hóa ở cây", "d"],
+          [193, "Trong bộ máy quang hợp, nguyên tố Mn đóng vai trò quan trọng trong:", "Thành phần Chlorophyll", "Lôi kéo & đồng hóa CO2", "Qúa trình quang phân li nước", "Đóng mở khí khổng", "c"],
+          [194, "Trong quá trình quang hợp, Oxygen được giải phóng ở:", "Pha sáng", "Pha tối", "Quá trình vận chuyển chất đồng hóa", "Giai đoạn ATP được sản sinh", "a"],
+          [195, "Trong quá trình hô hấp Oxygen được sử dụng ở:", "Giai đoạn đường phân", "Trong chu trình Krebs", "Đầu chuỗi vận chuyển điện tử", "Cuối chuỗi vận chuyển điện tử", "d"],
+          [196, "Trong quá trình hô hấp, năng lượng ATP được tạo ra nhiều nhất:", "Ở giai đoạn đường phân", "Trong chu trình Krebs", "Trong chuỗi vận chuyển điện tử", "Trong chuỗi chuyển hóa yếm khí", "c"],
+          [197, "Thực vật C3 không có nhược điểm sau đây:", "Nhạy cảm với nhiệt độ cao", "Nhạy cảm với ánh sáng mạnh", "Ái lực với CO2 hạn chế", "Nhạy cảm với nhiệt độ thấp", "d"],
+          [198, "Tốc độ tích tụ sản phẩm đồng hóa vào trái cây không lệ thuộc vào các thông số sau:", "Vị trí của trái trên cành", "Đường kính cuống trái", "Chiều dài cuống trái", "Màu sắc trái", "d"],
+          [199, "ATP từ quá trình hô hấp không dùng để phân bổ cho:", "Quá trình quang hợp", "Duy trì hoạt động trao đổi chất cơ bản", "Hấp thu nước và muối khoáng ở bộ rễ", "Đòi hỏi của các hoạt động tăng trưởng", "a"],
+          [200, "Kiểu phân bổ ATP từ quá trình hô hấp nào sẽ giúp cây lớn nhanh nhất cho:", "Tăng hô hấp duy trì (Rm) giảm hô hấp tăng trưởng (Rg)", "Tăng hô hấp hấp thu (Ru); giảm hô hấp duy trì (Rm)", "Giảm hô hấp duy trì (Rm); tăng hô hấp tăng trưởng (Rg)", "Tăng hô hấp hấp thu (Ru); tăng hô hấp duy trì (Rm)", "c"],
+          [201, "Ti thể có đặc trưng cấu trúc là:", "Có màng trong gấp khúc", "Có màng Thylakoid", "Có cấu trúc bên trong dạng hạt", "Có chứa RNA", "a"],
+          [202, "Điểm cuối của quá trình đường phân là:", "Phân tử CO2 có 1 Carbon", "Phân tử có 2 Carbon", "Phân tử có 3 Carbon", "Phân tử có 4 Carbon", "c"],
+          [203, "CO2 được phóng thích trong quá trình hô hấp ở:", "Trong giai đoạn đường phân", "Trong chu trình Krebs", "Đầu chuỗi vận chuyển điện tử hô hấp", "Cuối chuỗi vận chuyển điện tử hô hấp", "b"],
+          [204, "Tốc độ hô hấp sẽ được kích thích mạnh nhờ phân tử:", "CO2", "CH4", "C2H4", "C3H6", "c"],
+          [205, "Biện pháp sau có thể được sử dụng để hạn chế hô hấp, kéo dài thời gian bảo quản nông sản:", "Tăng hàm lượng Oxygen", "Giảm hàm lượng Oxygen", "Giảm hàm lượng CO2", "Tăng hàm lượng Ethylene", "b"],
+          [206, "Biện pháp sau có thể được sử dụng để hạn chế hô hấp, kéo dài thời gian bảo quản nông sản:", "Tăng hàm lượng Oxygen", "Tăng hàm lượng CO2", "Tăng hàm lượng Ethylene", "Giảm hàm lượng CO2", "b"],
+          [207, "Biện pháp sau có thể được sử dụng để trái cây nhóm Climacteric mau chín:", "Giảm hàm lượng Oxygen", "Tăng hàm lượng CO2", "Tăng hàm lượng Ethylene", "Giảm nhiệt độ", "c"],
+          [208, "Để hạn chế hô hấp đối với hạt trong quá trình bảo quản cần:", "Tăng ẩm độ cho hạt", "Tăng nhiệt độ cho hạt", "Tăng hàm lượng oxygen cho hạt", "Giảm hàm lượng oxygen cho hạt", "d"],
+          [209, "Nếu tốc độ hô hấp của trái xoài ở 35°C là 80ml CO2/kg/h; với hệ số Q10=2; vậy khi bảo quản 5°C tốc độ hô hấp sẽ là:", "10 ml CO2/kg/h", "40 ml CO2/kg/h", "160 ml CO2/kg/h", "320 ml CO2/kg/h", "a"],
+          [210, "Điểm mạnh chính của loại tế bào Parenchyma là:", "Tế bào cứng cáp bền vững", "Kích thước tế bào lớn, kéo dài", "Tế bào phân chia nhanh", "Diễn ra hoạt động trao đổi chất mạnh", "d"],
+          [211, "Điểm mạnh chính của loại tế bào Chollenchyma là:", "Tế bào cứng cáp bền vững", "Khả năng quang hợp mạnh", "Tế bào phân chia nhanh", "Diễn ra hoạt động trao đổi chất mạnh", "a"],
+          [212, "Loại tế bào được tăng cường nhiều Lignin tạo ra độ cứng cáp nhất là:", "Chollenchyma", "Parenchyma", "Sclerenchyma", "Cambium", "c"],
+          [213, "Loại tế bào phân sinh có vai trò tạo ra các mạch dẫn và sự gia tăng đường kính thân cây thân gỗ là:", "Mô phân sinh đỉnh ngọn", "Tượng tầng", "Mô phân sinh chóp rễ", "Mô phân sinh lóng", "b"],
+          [214, "Plasmodesma đóng vai trò là:", "Kênh trao đổi khí của lá", "Kênh giao thương giữa các tế bào", "Động cơ vận chuyển các thành phần trong tế bào", "Tế bào chuyên trách hút nước ở rễ", "b"],
+          [215, "Các lớp tế bào xếp thứ tự từ ngoài vào trong ở thân cây sẽ là:", "Biểu bì-Tượng tầng-Mạch nhựa (Phloem)-Mạch gỗ (Xylem)", "Biểu bì--Mạch gỗ (Xylem)-Tượng tầng-Mạch nhựa (Phloem)", "Biểu bì-Tượng tầng-Mạch gỗ (Xylem)- Mạch nhựa (Phloem)", "Biểu bì-Mạch nhựa (Phloem)-Tượng tầng-Mạch gỗ (Xylem)", "d"],
+          [216, "Việc lại các tế bào sinh dưỡng bằng kỹ thuật dung hợp tế bào trần cần phải dùng enzyme sau để loại bỏ thành tế bào:", "Cellulase", "Hemicellulase", "Pectinase", "Cả 3 loại enzyme trên", "d"],
+          [217, "Cellulose trong thành phần thành tế bào được tổ chức dạng:", "Các cuộn tròn", "Các bó sợi song song", "Vô định hình", "Đan vuông góc", "b"],
+          [218, "Bào quan nào không cùng nhóm với các bào quan còn lại:", "Lục lạp (Chloroplast)", "Sắc lạp (Chromoplast)", "Bột lạp (Amylosplast)", "Ribosome", "d"],
+          [219, "Khái niệm Transposon & Retrotransposon dùng để chỉ:", "Các protein di chuyển vị trí liên tục trong nhân tế bào", "Các phân đoạn DNA di chuyển vị trí trong quá trình phát triển của tế bào", "Các bào quan di chuyển vị trí liên tục trong tế bào", "Các RNA di chuyển vị trí liên tục trong nhân tế bào", "b"],
+          [220, "Trong bộ máy di truyền thì Promoter là:", "Là phân đoạn trên DNA di chuyển tự do trên nhiễm sắc thể", "Là vùng trình tự đóng vai trò quyết định đối với hoạt động biểu hiện của một gene", "Là điểm bắt đầu của một gene", "Là điểm kết thúc của một gene", "b"],
+          [221, "Trong bộ máy di truyền thì Terminator là:", "Là phân đoạn trên DNA di chuyển tự do trên nhiễm sắc thể", "Là vùng trình tự đóng vai trò quyết định đối với hoạt động biểu hiện của một gene", "Là điểm bắt đầu của một gene", "Là điểm kết thúc của một gene", "d"],
+          [222, "Trong bộ máy di truyền Pseudogene là:", "Là vùng DNA di chuyển tự do trên nhiễm sắc thể", "Là điểm kết thúc của một gene", "Các vùng có cấu trúc giống gene nhưng không biểu hiện chức năng", "Là vùng trình tự đóng vai trò quyết định đối với hoạt động biểu hiện của một gene", "c"],
+          [223, "Bào quan nào có chứa RNA trong thành phần cấu tạo:", "Lục lạp", "Ty thể", "Thể Golgi", "Ribosome", "d"],
+          [224, "Ion nào đóng vai trò quan trong chuỗi truyền tín hiệu của tế bào:", "K+", "Mg2+", "Ca2+", "Cu2+", "c"],
+          [225, "Bào quan nào có chứa DNA trong thành phần cấu tạo:", "Không bào", "Ty thể", "Thể Golgi", "Ribosome", "b"],
+          [226, "Rễ các cây trồng cạn khi bị ngập úng sẽ:", "Sản sinh ra nhiều O2 hơn", "Sản sinh ra nhiều CO2 hơn", "Sản sinh ra nhiều Ethanol hơn", "Sản sinh ra nhiều Ethylene hơn", "c"],
+          [227, "Nguyên tố có lợi giúp nhiều cây trồng nâng cao khả năng chống chịu và đề kháng là:", "S", "Si", "Se", "Co", "b"],
+          [228, "Hệ số Q10 đối với quá trình hô hấp là:", "Tỉ lệ giữa hô hấp khi so với quang hợp", "Hô hấp của cây mọc ở nhiệt độ 10°C", "Tỉ lệ tốc độ hô hấp khi so với nhiệt độ thấp hơn 10°C", "Tỉ lệ tốc độ hô hấp khi so với nhiệt độ cao hơn 10°C", "d"],
+          [229, "Điều nào sau đây không đúng trong trường hợp trái cây được bọc với loại bao tối màu:", "Trái không quang hợp", "Trái bớt bị các loài gây hại tấn công", "Trái bớt mất nước", "Trái dày vỏ", "d"],
+          [230, "Côn trùng trích hút thường sẽ châm vòi hút vào khu vực nào của cây:", "Xylem", "Mạch Phloem (Libe)", "Nhu mô", "Biểu bì", "b"],
+          [231, "Sản phẩm quang hợp muốn được tải tới các bộ phận tiếp nhận phải tập trung ở vùng:", "Vùng tế bào biểu bì", "Vùng tế bào sàng", "Vùng tế bào nhu mô", "Vùng tế bào mô phân sinh", "b"],
+          [232, "Sắc tố Chlorophyll trong lục lạp được gắn trên lớp màng chuyên biệt có tên là:", "Alkaloid", "Flavonoid", "Thylakoid", "Android", "c"],
+          [233, "Thành phần nào sau đây thiết lập chuỗi lên chuỗi hô hấp:", "Phytochrome", "Crytochome", "Cytochrome", "Cytokinin", "c"],
+          [234, "Hoạt động của chu trình nào sau đây giúp cây trồng chịu đựng nắng nóng tốt hơn:", "Chu trình Canvin", "Chu trình Krebs", "Chu trình C4", "Chu trình Xanthophyll", "c"],
+          [235, "Tác động nào của biến đổi khí hậu sau đây có thể có lợi cho thực vật vùng nhiệt đới:", "Nhiệt độ tăng", "Độ mặn tăng", "Hàm lượng CO2 tăng", "Khô hạn tăng", "c"],
+          [236, "Xu hướng biến đổi khí hậu hiện nay thì cây nhóm nào sẽ gặp bất lợi nhiều hơn:", "Thực vật C3", "Thực vật C4", "Thực vật CAM", "Thực vật vùng sa mạc", "a"],
+          [237, "Giống cây trồng có màu sắc như thế nào là biểu hiện giống chịu được ánh sáng và nhiệt độ cao:", "Xanh đậm", "Xanh nhạt", "Xanh hơi ngả vàng", "Màu sặc sỡ", "a"],
+          [238, "Đèn LED chiếu sáng cho cây trồng sinh trưởng hiện nay thường là tích hợp của:", "7 màu", "6 màu", "4 màu", "2 màu", "d"],
+          [239, "Khí khổng tập trung nhiều hơn ở đâu:", "Mặt trên lá", "Mặt dưới lá", "Gân lá", "Mép lá", "b"],
+          [240, "Bộ phận cây trồng nào thường có tốc độ hô hấp cao hơn:", "Quả chín", "Lá", "Rễ", "Thân", "a"],
+          [241, "Đo chỉ số SPAD trên lá cho ta thông tin chính gì:", "Mật độ khí khổng trên lá", "Hàm lượng chất tan trong lá", "Hàm lượng Chlorophyll trong lá", "Hàm lượng đạm trong lá", "c"],
+          [242, "Cách thông dụng nhất để nhận biết nhanh một loài cây lạ có quang hợp theo hình thức C4 hay không là:", "Đo chỉ số SPAD", "Đếm số khí khổng", "Giải phẫu phát hiện cấu trúc dạng vòng hoa (Cấu trúc Kranz) ở lá", "Phân tích đồng vị carbon 14", "c"],
+          [243, "Oxygen được sử dụng ở trong giai đoạn nào của chuỗi hô hấp:", "Quá trình đường phân", "Chu trình Krebs", "Chuỗi vận chuyển điện tử ty thể", "Quá trình gấp khúc màng ty thể", "c"],
+          [244, "CO2 phóng thích trong giai đoạn nào của chuỗi hô hấp:", "Quá trình đường phân", "Chu trình Krebs", "Chuỗi vận chuyển điện tử ty thể", "Quá trình thâm nhập của Oxygen vào bên trong ty thể", "b"],
+          [245, "Trong chuỗi hô hấp, giai đoạn tạo ra nhiều năng lượng nhất là:", "Quá trình đường phân", "Chu trình Krebs", "Chuỗi vận chuyển điện tử ty thể", "Quá trình thâm nhập Oxygen vào ty thể", "c"],
+          [246, "Chu trình sau có sản phẩm đầu tiên là 6 carbon", "Chu trình Calvin", "Chu trình Hatch-Slack", "Chu trình Krebs", "Chu trình Urea", "c"],
+          [247, "Chu trình sau có sản phẩm đầu tiên là 4 carbon", "Chu trình Calvin", "Chu trình Hatch-Slack", "Chu trình Krebs", "Chu trình Urea", "b"],
+          [248, "Chu trình sau có sản phẩm đầu tiên là 3 carbon", "Chu trình Calvin", "Chu trình Hatch-Slack", "Chu trình Krebs", "Chu trình Urea", "a"],
+          [249, "Người ta thường nói Ty thể là:", "Nhà máy sản xuất năng lượng của tế bào", "Nhà máy sản xuất các đơn vị cấu trúc của tế bào", "Nhà kho lưu giữ vật chất của tế bào", "Nhà máy tái chế của tế bào", "a"],
+          [250, "Bảo quản nông sản lâu dài cần hạn chế hô hấp thì biện pháp nào sau đây là hữu hiệu nhất:", "Tăng cường hàm lượng Oxygen", "Tăng cường chiếu sáng", "Tăng cường hàm lượng CO2", "Tăng cường ẩm độ", "c"],
+          [251, "Bảo quản nông sản lâu dài cần hạn chế hô hấp thì biện pháp nào sau đây là cần thiết nhất:", "Hạn chế nông sản tiếp xúc với Oxygen", "Hạn chế nông sản tiếp xúc với ánh sáng", "Hạn chế nông sản tiếp xúc với CO2", "Hạn chế nông sản tiếp xúc với nhau", "a"],
+          [252, "Thúc trái cây mau chín dung các chất sản sinh Ethylene bởi vì:", "Điểm bù nhiệt độ", "Điểm bù ánh sáng", "Điểm bù nhiệt độ", "Hợp chất này thúc đẩy tế bào phân giải và mềm ra", "d"],
+          [253, "Để xúc tiến hô hấp và bắt đầu nảy mầm thì hạt giống giàu đạm bột cần sử dụng enzyme nào:", "Amylase", "Protease", "Lipase", "Phosphatase", "b"],
+          [254, "Để xúc tiến hô hấp và bắt đầu nảy mầm thì hạt giống giàu chất béo cần sử dụng enzyme nào:", "Amylase", "Protease", "Lipase", "Phosphatase", "c"],
+          [255, "Để xúc tiến hô hấp và bắt đầu nảy mầm thì hạt giống giàu tinh bột cần sử dụng enzyme nào:", "Amylase", "Protease", "Lipase", "Phosphatase", "a"],
+          [256, "Hạt đậu phộng nảy mầm thì quá trình hô hấp tạo năng lượng chủ yếu từ thành phần:", "Đường", "Tinh bột", "Chất béo", "Protein", "c"],
+          [257, "Hạt đậu nành nảy mầm thì quá trình hô hấp tạo năng lượng chủ yếu từ thành phần:", "Đường", "Tinh bột", "Chất béo", "Protein", "d"],
+          [258, "Hợp chất Glycoside Cyanogen (Cyanur) có ở vỏ cây khoai mỳ gây độc là do:", "Gây ức chế hô hấp", "Gây ức chế hấp thu dinh dưỡng", "Gây ức chế trao đổi chất", "Gây ức chế chuyển hóa đạm", "a"],
+          [259, "Hợp chất Rotenone trong cây thuốc cá có công dụng trong BVTV là do:", "Gây ức chế hô hấp", "Gây ức chế quang hợp", "Gây ức chế hấp thu dinh dưỡng", "Gây ức chế hấp thu nước", "a"],
+          [260, "Làm đất tơi xốp, không đọng nước sẽ trực tiếp giúp cho:", "Cây ít bị ảnh hưởng bởi vi sinh vật trong đất hơn", "Cây ít bị ảnh hưởng động vật trong đất hơn", "Cây hô hấp tốt hơn", "Cây quang hợp tốt hơn", "c"],
+          [261, "Hình thức hô hấp sinh nhiệt gây phát tán mùi hương thường thấy ở cây nào:", "Họ ráy", "Họ lan", "Họ Cam quýt", "Họ đậu", "a"],
+          [262, "Những cây ưa bóng râm thường sẽ có:", "Điểm bù ánh sáng thấp", "Điểm bù ánh sáng cao", "Điểm bù CO2 thấp", "Điểm bù CO2 cao", "a"],
+          [263, "Trạng thái cân bằng giữa tốc độ quang hợp và tốc độ hô hấp không bao gồm khái niệm sau:", "Hợp chất này thúc đẩy hô hấp", "Hợp chất này thúc đẩy trái bay bớt hơi nước", "Hợp chất này thúc đẩy sư huy động dinh dưỡng", "Điểm bù kinh tế", "d"],
+          [264, "Cây sinh trưởng nhanh thì hô hấp như thế nào:", "Tỉ lệ hô hấp dành cho duy trì thấp", "Tỉ lệ hô hấp dành cho duy trì cao", "Tỉ lệ hô hấp dành cho tăng trưởng cao", "Tỉ lệ hô hấp dành cho hấp thụ trao đổi thấp", "c"],
+          [265, "Tên gọi khác của chu trình Krebs là:", "Chu trình Calvin", "Chu trình Acid Citric", "Chu trình Hatch-Slack", "Chu trình Urea", "b"],
+          [266, "Tốc độ quay vòng của phân tử ATP khi được sản sinh trong quá trình hô hấp vào khoảng:", "Trong vòng vài tuần", "Trong vòng vài giờ", "Trong vòng vài ngày", "Trong vòng vài phút", "d"],
+          [267, "Hệ số Q10 của hô hấp có nghĩa là:", "Chỉ số tốc độ hô hấp 5~10°C", "Chỉ số tốc độ hô hấp khi nhiệt độ tăng 10°C", "Chỉ số tốc độ hô hấp khi nhiệt độ giảm 10°C", "Chỉ số tốc độ hô hấp trong biên độ 10°C", "b"],
+          [268, "Việc tỉa bớt trái trên mỗi cành cần quan tâm tới:", "Đảm bảo số trái tỉ lệ với số lá có khả năng quang hợp hữu hiệu trên cành đó", "Đảm bảo tỉa đều số trái cho tất cả các cành", "Đảm bảo cành càng thấp càng nên giữ nhiều trái", "Đảm bảo cành càng cao càng nên giữ nhiều trái", "a"],
+          [269, "Bộ phận có thể chuyển từ 'Sink' thành 'Source' ở cây trồng đang phát triển là:", "Lá bánh tẻ", "Lá già", "Lá non", "Quả/Củ/Hạt", "c"],
+          [270, "Bộ phận có thể chuyển từ 'Source' thành 'Sink' ở cây trồng là:", "Lá bánh tẻ", "Lá già", "Lá non", "Quả/Củ/Hạt", "d"],
+          [271, "Bộ phận luôn đóng vai trò là 'Sink' ở cây trồng đang phát triển là:", "Lá bánh tẻ", "Lá già", "Lá non", "Quả/Củ/Hạt", "d"],
+          [272, "Bộ phận được coi là 'Source' điển hình ở cây trồng là:", "Lá bánh tẻ", "Lá già", "Lá non", "Quả/Củ/Hạt", "a"],
+          [273, "Ai hiện đang là người tài trợ cho dự án tạo cây lúa C4:", "Bill Gates", "Mark Zukerburg", "Elon Musk", "Jack Ma", "a"],
+          [274, "Hình thức quang hợp nào cần sử dụng trục tiếp tế bào bỏ mạch:", "C2", "C3", "C4", "CAM", "c"],
+          [275, "Họ thực vật nào có nhiều loài quang hợp theo hình thức C4 nhất:", "Họ rau Dền", "Họ Cói", "Họ Hòa thảo", "Họ Cúc", "c"],
+          [276, "Qúa trình quang hô hấp và hô hấp có điểm chung là:", "Diễn ra ở cùng bào quan", "Cùng gia tăng khi có ánh sáng mạnh", "Cùng gia tăng khi nhiệt độ cao", "Cũng tạo ra CO2", "d"],
+          [277, "Màu sắc nào sau đây thường được cây xanh hấp thu với lượng nhiều nhất để thực hiện phản ứng quang hợp:", "Đỏ", "Cam", "Xanh dương", "Vàng", "c"],
+          [278, "Màu sắc nào sau đây có năng lượng nhiều nhất khi tương tác với hệ thống quang hợp:", "Đỏ", "Cam", "Xanh dương", "Vàng", "a"],
+          [279, "Sắc tố sau không tham gia trong hệ thống thu nhân ánh sáng của quang hợp:", "Chlorophyll a", "Chlorophyll b", "Caroteinoid", "Anthocyanin", "d"],
+          [280, "Xác định tình trạng dinh dưỡng của cây trồng không thể dựa vào điều sau:", "Chẩn đoán triệu chứng qua lá", "Phân tích thành phần trong lá", "Phân tích dịch thành phần trong mạch dẫn", "Phân tích thành phần bộ phận bị rụng", "d"],
+          [281, "Để chọn 1 lá phân tích tình trạng sinh lý của cây thì sẽ chọn:", "Lá non", "Lá già", "Lá phát triển hoàn chỉnh trẻ nhất", "Lá liền kề với trái", "c"],
+          [282, "Một nguyên tố được coi là nguyên tố thiết yếu cho cây trồng cần đáp ứng đủ:", "3 tiêu chí", "7 tiêu chí", "13 tiêu chí", "30 tiêu chí", "a"],
+          [283, "Nguyên tố dinh dưỡng khi thiếu xuất hiện ở các lá non thường thuộc nhóm:", "Có khả năng di chuyển nhanh trong cây", "Có khả năng di chuyển chậm trong cây", "Không có khả năng di chuyển trong cây", "Chỉ di chuyển ở bộ phận non trong cây", "b"],
+          [284, "Nguyên tố dinh dưỡng khi thiếu xuất hiện ở các lá già thường thuộc nhóm:", "Có khả năng di chuyển nhanh trong cây", "Có khả năng di chuyển chậm trong cây", "Không có khả năng di chuyển trong cây", "Chỉ di chuyển ở bộ phận non trong cây", "a"],
+          [285, "Khi cung cấp vào đất quá nhiều vôi (Ca) thì sẽ làm giảm hiệu quả của dinh dưỡng sau:", "Lân", "Kali", "Bo", "S", "a"],
+          [286, "Khi môi trường dinh dưỡng giàu lân thì khả năng dinh dưỡng sau sẽ bị cản trở:", "K", "Ca", "Cu", "Zn", "d"],
+          [287, "Phân Urea cung cấp trực tiếp cho cây loại ion nào:", "Amon", "Nitrate", "Phosphate", "Uric", "a"],
+          [288, "Lân được hấp thụ chủ yếu dạng ion nào:", "PO4 3-", "H2PO4-", "H3PO4", "P2O5", "b"],
+          [289, "Triệu chứng nào sau đây là biểu hiện cho triệu chứng thiếu đạm:", "Vàng lá non", "Cháy mép lá", "Lá chuyển đỏ tía", "Vàng lá già", "d"],
+          [290, "Triệu chứng nào sau đây là biểu hiện cho triệu chứng thiếu lân:", "Vàng lá non", "Cháy mép lá", "Lá chuyển đỏ tía", "Vàng lá già", "c"],
+          [291, "Triệu chứng nào sau đây là biểu hiện cho triệu chứng thiếu kali:", "Vàng lá non", "Cháy mép lá", "Lá chuyển đỏ tía", "Vàng lá già", "b"],
+          [292, "Triệu chứng nào sau đây là biểu hiện cho triệu chứng thiếu lưu huỳnh:", "Vàng lá non", "Cháy mép lá", "Lá chuyển đỏ tía", "Vàng lá già", "a"],
+          [293, "Ngày phân bón thế giới là ngày:", "13 tháng 10", "10 tháng 3", "10 tháng 10", "13 tháng 9", "a"],
+          [294, "Nguyên tố nào trong các nguyên tố sau đây là nguyên tố dinh dưỡng thiết yếu cho cây trồng:", "Na", "Ca", "Se", "Si", "b"],
+          [295, "Nguyên tố nào sau đây không phải nguyên tố dinh dưỡng thiết yếu hoặc nguyên tố có lợi đối với cây trồng:", "Si", "Cu", "P", "Pb", "d"],
+          [296, "Nguyên tố nào sau đây là nguyên tố dinh dưỡng thiết yếu đối với cây trồng:", "Au", "Ag", "Cu", "Pb", "c"],
+          [297, "Nguyên tố nào sau đây được coi là nguyên tố vi lượng đối với cây trồng:", "P", "B", "Mg", "S", "b"],
+          [298, "Nguyên tố nào sau đây được coi là nguyên tố đa lượng đối với cây trồng:", "Mn", "Cu", "Ca", "P", "d"],
+          [299, "Nốt sần hữu hiệu của cây họ đậu là màu sắc từ nguyên tố nào sau đây:", "N", "Ca", "K", "Co", "d"],
+          [300, "Nguyên tố nào trong các nguyên tố sau đây không phải nguyên tố dinh dưỡng thiết yếu, chỉ là nguyên tố có lợi:", "Ca", "Cu", "Mn", "Si", "d"],
+          [301, "Không thể trồng cây trầu bà lâu dài bằng nước cất phòng thí nghiệm bởi vì:", "Nước quá sạch", "Nước không có các vi sinh vật", "Nước không có các chất khoáng", "Nước quá trong", "c"],
+          [302, "Người ta không thể trồng cây trầu bà và các cây trong nhà khác nếu sử dụng loại nước sau:", "Nước ruộng", "Nước giếng", "Nước từ nhà máy", "Nước cất phòng thí nghiệm", "d"],
+          [303, "Loại phân bón nào có tăng cường nguyên tố vi lượng:", "20-10-10", "16-16-8-13S", "20-20-15", "30-10-10+TE", "d"],
+          [304, "Loại phân bón nào có hàm lượng Lân cao hơn:", "20-10-10", "16-16-8", "20-20-15", "18-46-0", "d"],
+          [305, "Loại phân bón nào có hàm lượng Kali cao hơn:", "20-10-10", "10-10-30", "16-16-8", "20-20-15", "b"],
+          [306, "Dinh dưỡng ở dạng nào cho phép hạn chế sự kết tủa hoặc tương tác:", "Dạng Ion độc lập", "Phức chất", "Dạng hữu cơ", "Dạng Chelate", "d"],
+          [307, "Dinh dưỡng ở dạng nào cho phép cây dễ dàng hấp thu:", "Ion hòa tan", "Phức chất", "Tinh thể", "Dạng hữu cơ", "a"],
+          [308, "Thành phần ở vùng rễ giúp hòa tan dinh dưỡng nhanh hơn cho cây được gọi là:", "Rhizophere", "Sidephore", "Electrophore", "Sidebar", "a"],
+          [309, "Loại dinh dưỡng nào thường di chuyển vào gây hiệu quả nhanh cho cây:", "Đạm vô cơ", "Đạm hữu cơ", "Lân vô cơ", "Lân hữu cơ", "a"],
+          [310, "Hình thức cung cấp nước nào giúp hạ nhiệt độ đồng ruộng nhất khi trời nóng:", "Tưới nhỏ giọt", "Tưới tràn", "Tưới phun", "Tưới rãnh", "c"],
+          [311, "Hình thức cung cấp nước nào giúp tiết kiệm nước nhất:", "Tưới nhỏ giọt", "Tưới tràn", "Tưới phun", "Tưới rãnh", "a"],
+          [312, "Điều kiện ngoại cảnh nào sau đây làm cho cây bốc thoát hơi nước ít nhất:", "Gió mạnh", "Nhiệt độ cao", "Nhiệt độ thấp", "Ánh sáng mạnh", "c"],
+          [313, "Tế bào trong quả chín thường gia tăng số lượng loại bào quan sau:", "Sắc lạp (Chromoplast)", "Lục lạp (Chloroplast)", "Bột lạp (Amyloplast)", "Protoplast", "a"],
+          [314, "Lục lạp thường không hiện diện ở khu vực sau:", "Lá", "Thân", "Quả xanh", "Quả chín", "d"],
+          [315, "Năng lượng ATP được hình thành chủ yếu trong bào quan sau:", "Nhân tế bào", "Lục lạp", "Ty thể", "Ribosome", "c"],
+          [316, "Vai trò kiểm soát các thành phần xâm nhập vào bên trong tế bào do bộ phận sau đảm nhiệm:", "Thụ thể", "Nhân", "Màng tế bào", "Thành tế bào", "c"],
+          [317, "Tế bào trần (Protoplasm) là:", "Tế bào sau khi tách lớp màng plasma", "Tế bào sau khi tách rời nhân tế bào", "Tế bào sau khi tách bỏ lục lạp", "Tế bào sau khi tách lớp thành tế bào", "d"],
+          [318, "Thành tế bào của bộ phận nào trên cây thường có nhiều pectin nhất:", "Lá", "Thân", "Rễ", "Quả", "d"],
+          [319, "Thành tế bào của bộ phận nào trên cây có nhiều lignin nhất:", "Lá", "Thân", "Rễ", "Củ", "b"],
+          [320, "Cành/thân cây vững chắc hơn khi thành tế bào có nhiều:", "Cellulose", "Lignin", "Hemicellulose", "Pectin", "b"],
+          [321, "Khu vực nào trên thành tế bào thường là nơi lây lan các vi sinh vật lây bệnh trong cây:", "Plasmodesma", "Bó Cellulose", "Bó vi sợi", "Lignin", "a"],
+          [322, "Bào quan nào là đóng vai trò chính trong tổng hợp Protein:", "Ty thể", "Lục lạp", "Ribosome", "Peroxisome", "c"],
+          [323, "Ở cây Lúa đang phát triển, quang hợp không xảy ra ở bộ phận sau:", "Phiến lá", "Bẹ lá", "Vỏ trấu", "Nội nhũ", "d"],
+          [324, "Ở cây Bắp quang hợp không xảy ra ở bộ phận sau:", "Phiến lá", "Lá bi", "Bẹ lá", "Râu bắp", "d"],
+          [325, "Bào quan nào là nơi diễn ra nhiều nhất hoạt động Oxi hóa khử khi cây gặp những điều kiện bất lợi:", "Ty thể", "Lục lạp", "Ribosome", "Peroxisome", "d"],
+          [326, "Lá bánh tẻ có đặc điểm là:", "Quang hợp cao, hô hấp cao", "Quang hợp cao, hô hấp thấp", "Quang hợp thấp, hô hấp cao", "Quang hợp thấp, hô hấp thấp", "b"],
+          [327, "Để sản phẩm quang hợp vận chuyển thuận lợi và tăng trưởng trái nhanh thì đặc điểm nào sau đây của cuống trái sẽ có ưu điểm hơn:", "Ngắn nhưng đường kính cuống trái lớn", "Ngắn và đường kính cuống trái nhỏ", "Dài nhưng đường kính cuống trái nhỏ", "Dài và đường kính cuống trái lớn", "a"],
+          [328, "Ở các cây thân cỏ đặc tính nào của phiến lá hứa hẹn đạt hiệu quả quang hợp và năng suất cao:", "Phiến lá thẳng, góc lá rộng", "Phiến lá thẳng, góc lá hẹp", "Phiến lá cong cong đều, góc lá rộng", "Phiến lá cong cong đều, góc lá hẹp", "b"],
+          [329, "Giải pháp nào sau đây sẽ giúp tang hoạt động quang hợp và năng suấy sinh khối cây trồng:", "Giảm hàm lượng CO2 từ 5-10 lần", "Giảm hàm lượng CO2 từ 2-3 lần", "Tăng hàm lượng CO2 từ 2-3 lần", "Tăng hàm lượng CO2 từ 5-10 lần", "c"],
+          [330, "Dấu hiệu nào thường không phải là dấu hiệu cây trồng không nhận đủ ánh sáng:", "Lóng vươn dài", "Lóng ngắn", "Thân và tán lá nhạt màu", "Các lá phía dưới tán bị vàng và rụng", "b"],
+          [331, "Để cây trồng nhận đều ánh sáng trong ngày, thì mái của nhà màng, nhà lưới đơn lẻ nên theo hướng:", "Bắc-Nam", "Đông Tây", "Đông Bắc-Tây Nam", "Tây Bắc-Đông Nam", "a"],
+          [332, "Các kênh trên màng cho phép vận chuyển các thành phần một cách chủ động thì đòi hỏi quan trong nhất là:", "Chất cần vận chuyển có nồng độ cao", "Chất cần vận chuyển có nồng độ thấp", "Màng tế bào có khe lớn", "Cần sử dụng năng lượng ATP", "d"],
+          [333, "Giữa hai loại dinh dưỡng DAP và MAP:", "DAP cung cấp cho cây nhiều Lân hơn", "MAP cung cấp cho cây nhiều Lân hơn", "MAP cung cấp cho cây nhiều đạm hơn", "Cả hai cung cấp một lượng tương đương nhau", "b"],
+          [334, "Phân AMP cung cấp loại dinh dưỡng nào cho cây:", "As", "Mg", "K+", "NH4+", "d"],
+          [335, "Các giống lúa 'siêu lá xanh' có ưu điểm là:", "Ít đổ ngã hơn", "Độ bền quang hợp dài hơn", "Côn trùng ít tấn công hơn", "Cả 3 ý trên đều đúng", "d"],
+          [336, "Sự chuyển pha của tế bào thực vật giữa các giai đoạn sinh trưởng, phát triển được quyết định nhiều nhất bởi:", "Lục lạp", "Ty thể", "Một số bào quan không màng", "Ribosome", "b"],
+          [337, "Nguyên tố nào sau đây thường có khả năng vận chuyển nhanh nhất từ lá già sang lá non:", "P", "K", "Ca", "S", "b"],
+          [338, "Phloem là thuật ngữ dùng để chỉ hệ thống:", "Mạch vận chuyển sản phẩm quang hợp từ lá đến cơ quan sử dụng", "Mạch vẫn chuyển nước & các ion từ rễ lên phần thân lá", "Mạch vận đường trong cây", "Mạch vận chuyển các chất thử cấp trong cây", "a"],
+          [339, "Enzym Rubisco activase có vai trò:", "Đồng hóa CO2 C3", "Đồng hóa CO2 C4", "Đồng hóa CO2 CAM", "Hoạt hóa và điều hòa Rubisco", "d"],
+          [340, "Loại sắc tố nào sau đây chỉ bảo vệ quang hợp mà không giúp cung cấp năng lượng cho quang hợp ở cây xanh:", "Chlorophyll a", "Chlorophyll b", "Anthocyanin", "Caroteinoids", "c"],
+          [341, "Với các cây xanh thông thường thì màu đỏ là màu:", "Được lá cây hấp thu", "Được lá cây phản xạ", "Được lá cây tán xạ", "Được lá cây khúc xạ", "a"],
+          [342, "Với các cây xanh thông thường thì màu lục là màu:", "Được lá cây hấp thu", "Được lá cây phản xạ", "Được lá cây tán xạ", "Được lá cây khúc xạ", "b"],
+          [343, "Đèn LED không có ưu thế sau khi sử dụng chiếu sáng trong cho cây trồng:", "Kiểm soát được vùng và tỉ lệ quang phổ phù hợp", "Ít tốn điện", "Ít sinh nhiệt", "Ít đầu tư", "d"],
+          [344, "Nhờ khả năng quang hợp mà ngày nay cây xanh còn là nền tảng tạo thêm thu nhập thông qua:", "Tạo thêm 'Tín chỉ carbon'", "Giảm bớt 'Tín chỉ carbon'", "Ổn định 'Tín chỉ carbon'", "Cân bằng 'Tín chỉ carbon'", "a"],
+          [345, "Expansin có vai trò trong quá trình:", "Dãn thành tế bào", "Vận chuyển giữa các tế bào chất", "Hấp thu dinh dưỡng", "Thúc đẩy nở hoa", "a"],
+          [346, "Plasmodesma có vai trò trong qua trình:", "Dãn thành tế bào", "Vận chuyển giữa các tế bào chất", "Hấp thu dinh dưỡng", "Thúc đẩy nở hoa", "b"],
+          [347, "Cấu tử nào sau đây là nơi tích tụ sắc tố:", "Proteosome", "Proteoplast", "Chromoplast", "Ribosome", "c"],
+          [348, "Cấu tử nào sau đây không liên quan trực tiếp đến sự trao đổi protein:", "Proteosome", "Proteoplast", "Chromoplast", "Ribosome", "c"],
+          [349, "Để gia tăng kích thước tế bào, các bó sợi cellulose cần được nới lỏng bởi enzyme sau:", "Cellulase", "Expansin", "Extensin", "Protease", "b"],
+          [350, "Proteosome có vai trò trái ngược với bào quan nào sau đây:", "Ribosome", "Plastid", "Không bào", "Ty thể", "a"],
+          [351, "Thuật ngữ nào sau đây dùng để chỉ cho nhân tế bào:", "Nucleotide", "Nucleosome", "Nucleus", "Nucleic acid", "c"],
+          [352, "Khi hàm lượng Oxygen dẫn tới làm giảm hiệu quả quang hợp được gọi là:", "Hiệu ứng Oxy", "Hiệu ứng Calvin", "Hiệu ứng Warburg", "Hiệu ứng Hatch-Slack", "c"],
+          [353, "Số lượng gene của một sinh vật ít phụ thuộc vào:", "Kích thước nhiễm sắc thể", "Mức độ bội thể của bộ nhiễm sắc thể", "Số lượng nhiễm sắc thể", "Loài sinh vật đó", "c"],
+          [354, "Nhiễm sắc có ưu điểm so với thể nhiễm sắc là:", "Thuận tiện cho sự phân bào", "Thuận lợi cho sự biểu hiện gene", "Thuận lợi cho sự di truyền", "Thuận lợi cho sự phiên mã", "b"],
+          [355, "Nhóm thực vật nào thường mở khí khổng vào ban đêm:", "Thực vật C3", "Thực vật C4", "Thực vật CAM", "Tất cả đề mở ban đêm", "c"],
+          [356, "Endophytes là các vi sinh vật:", "Hấp thụ dinh dưỡng từ đất cho cây", "Gây ra các triệu chứng bệnh trong cây", "Sống bên trong các mô thực vật mà không gây hại", "Đối kháng với các vi sinh gây bệnh cho cây", "c"],
+          [357, "Phytochelatins trong là thành phần có chức năng:", "Kết gắn với kim loại nặng để giải độc cho thực vật", "Hỗ trợ vận chuyển nước trong mạch gỗ", "Thúc đẩy sự phát triển rễ", "Thúc đẩy sự phát triển lá", "a"],
+          [358, "Expansins la enzyme có chức năng:", "Giúp hấp thụ nước vào tế bào", "Nới lỏng thành tế bào để tạo điều kiện cho sự tăng kích thước", "Tăng cường quá trình trao đổi chất", "Tăng cường quá trình hấp thu dinh dưỡng", "b"],
+          [359, "Cây không thể trao O2 và CO2 với môi trường thông qua:", "Rễ", "Lenticels", "Khí khổng", "Cutin", "d"],
+          [360, "PEP carboxylase là một enzyme tham gia chủ yếu vào:", "Cố định carbon ở thực vật C4 và CAM", "Tổng hợp protein trong lục lạp", "Lưu trữ tinh bột trong lục lạp", "Vận chuyển nước qua màng", "a"]
+        ];
+
+        const apiKey = ""; 
+
+        const QuizApp = () => {
+          const [currentPart, setCurrentPart] = useState(null);
+          const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+          const [score, setScore] = useState(0);
+          const [wrongScore, setWrongScore] = useState(0); 
+          const [showResult, setShowResult] = useState(false);
+          const [selectedOption, setSelectedOption] = useState(null);
+          const [isCorrect, setIsCorrect] = useState(null);
+          const [questions, setQuestions] = useState([]);
+          const [shuffledOptions, setShuffledOptions] = useState([]);
+          const [isConfirming, setIsConfirming] = useState(false); 
+          const [sessionAnswers, setSessionAnswers] = useState([]); 
+          const [reviewMode, setReviewMode] = useState(false);
+          const [reviewData, setReviewData] = useState([]); 
+          
+          const [aiExplanation, setAiExplanation] = useState(null);
+          const [isAiLoading, setIsAiLoading] = useState(false);
+          const [currentAiQuestionId, setCurrentAiQuestionId] = useState(null);
+
+          const [history, setHistory] = useState(() => {
+            try {
+              const saved = localStorage.getItem('plant_phys_app_v2'); 
+              const parsed = saved ? JSON.parse(saved) : [];
+              return Array.isArray(parsed) ? parsed : [];
+            } catch (e) { return []; }
+          });
+
+          const shuffleArray = (array) => {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+          };
+
+          const saveHistory = (finalScore, finalWrong, totalQuestions, partId, answers) => {
+            const newRecord = {
+              id: Date.now(),
+              date: new Date().toLocaleString('vi-VN'),
+              part: partId,
+              score: finalScore,
+              wrong: finalWrong,
+              total: totalQuestions,
+              details: answers.map(q => ({
+                id: q.id,
+                q: q.q,
+                o: q.options || [],
+                s: q.userSelected,
+                c: q.correct
+              }))
+            };
+            const updatedHistory = [newRecord, ...history];
+            setHistory(updatedHistory);
+            try {
+              localStorage.setItem('plant_phys_app_v2', JSON.stringify(updatedHistory));
+            } catch (e) {
+              localStorage.setItem('plant_phys_app_v2', JSON.stringify(updatedHistory.slice(0, 30)));
+            }
+          };
+
+          const clearHistory = () => {
+            if (window.confirm('Bạn có chắc muốn xóa toàn bộ lịch sử không?')) {
+              setHistory([]);
+              localStorage.removeItem('plant_phys_app_v2');
+            }
+          };
+
+          const startQuiz = (part) => {
+            const raw = FULL_DATA.filter(item => {
+                if (part === 1) return item[0] <= 45;
+                if (part === 2) return item[0] > 45 && item[0] <= 90;
+                if (part === 3) return item[0] > 90 && item[0] <= 135;
+                if (part === 4) return item[0] > 135 && item[0] <= 180;
+                if (part === 5) return item[0] > 180 && item[0] <= 225;
+                if (part === 6) return item[0] > 225 && item[0] <= 270;
+                if (part === 7) return item[0] > 270 && item[0] <= 315;
+                if (part === 8) return item[0] > 315;
+                return false;
+            });
+            const formatted = raw.map(item => ({
+              id: item[0],
+              q: item[1],
+              correct: item[6], 
+              options: shuffleArray([
+                { key: 'a', text: item[2] }, { key: 'b', text: item[3] }, { key: 'c', text: item[4] }, { key: 'd', text: item[5] }
+              ])
+            }));
+            setQuestions(formatted);
+            setCurrentPart(part);
+            setCurrentQuestionIndex(0);
+            setScore(0);
+            setWrongScore(0);
+            setSessionAnswers([]);
+            setShowResult(false);
+            setSelectedOption(null);
+            setIsCorrect(null);
+            setAiExplanation(null); 
+            if(formatted.length > 0) setShuffledOptions(formatted[0].options);
+          };
+
+          const changeQuestion = (newIndex) => {
+            setCurrentQuestionIndex(newIndex);
+            const newQ = questions[newIndex];
+            setAiExplanation(null);
+            const existingAnswer = sessionAnswers.find(a => a.id === newQ.id);
+            if (existingAnswer) {
+              setShuffledOptions(existingAnswer.options);
+              setSelectedOption(existingAnswer.userSelected);
+              setIsCorrect(existingAnswer.userSelected === existingAnswer.correct);
+            } else {
+              setShuffledOptions(newQ.options);
+              setSelectedOption(null);
+              setIsCorrect(null);
+            }
+          };
+
+          const handleOptionSelect = (optionKey) => {
+            if (selectedOption) return; 
+            const currentQ = questions[currentQuestionIndex];
+            const correct = optionKey === currentQ.correct;
+            setSelectedOption(optionKey);
+            setIsCorrect(correct);
+            if (correct) setScore(s => s + 1); else setWrongScore(s => s + 1);
+            setSessionAnswers(prev => [...prev, { ...currentQ, userSelected: optionKey, options: shuffledOptions }]);
+          };
+
+          const nextQuestion = () => {
+            if (currentQuestionIndex < questions.length - 1) changeQuestion(currentQuestionIndex + 1);
+            else {
+              setShowResult(true);
+              saveHistory(score, wrongScore, questions.length, currentPart, sessionAnswers);
+            }
+          };
+
+          const prevQuestion = () => { if (currentQuestionIndex > 0) changeQuestion(currentQuestionIndex - 1); };
+
+          const requestFinish = () => setIsConfirming(true);
+          const confirmFinish = () => {
+            setShowResult(true);
+            saveHistory(score, wrongScore, questions.length, currentPart, sessionAnswers);
+            setIsConfirming(false);
+          };
+          const resetQuiz = () => { setCurrentPart(null); setQuestions([]); setReviewMode(false); setAiExplanation(null); };
+
+          const fetchAiExplanation = async (questionText, correctAnswerText, questionId) => {
+            if (!apiKey) return alert("Chức năng này cần API Key.");
+            setIsAiLoading(true);
+            setCurrentAiQuestionId(questionId);
+            setAiExplanation(null);
+            try {
+              const prompt = `Giải thích ngắn gọn kiến thức Sinh lý thực vật cho câu hỏi này: "${questionText}". Đáp án đúng: "${correctAnswerText}". Tại sao?`;
+              const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+              });
+              const data = await response.json();
+              setAiExplanation(data.candidates?.[0]?.content?.parts?.[0]?.text || "Không tải được giải thích.");
+            } catch (error) { setAiExplanation("Lỗi kết nối AI."); } finally { setIsAiLoading(false); }
+          };
+
+          const currentQ = questions[currentQuestionIndex];
+          
+          if (reviewMode) {
+            return (
+              <div className="min-h-screen p-4 sm:p-6 lg:p-8 font-sans bg-gray-50/50">
+                <div className="max-w-4xl mx-auto space-y-6">
+                  <div className="glass-panel p-4 rounded-2xl shadow-sm sticky top-4 z-10 flex justify-between items-center mb-8">
+                    <button onClick={() => setReviewMode(false)} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-semibold transition-colors"><ArrowLeft size={20} /> <span>Quay lại</span></button>
+                    <h2 className="text-xl font-bold text-gray-800 tracking-tight">Chi tiết bài làm</h2>
+                    <div className="w-8"></div> 
+                  </div>
+                  <div className="space-y-8 pb-10">
+                    {reviewData.map((item, index) => {
+                      const isCorrect = item.s === item.c;
+                      const options = Array.isArray(item.o) ? item.o : [];
+                      const correctOptionText = options.find(opt => opt.key === item.c)?.text;
+                      return (
+                        <div key={index} className={`bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-gray-100 ${!isCorrect ? 'ring-1 ring-red-100' : ''}`}>
+                          <div className="flex gap-4 mb-6">
+                            <span className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-lg ${isCorrect ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-red-400 to-red-600'}`}>{index + 1}</span>
+                            <h3 className="text-lg font-semibold text-gray-800 leading-relaxed">{item.q}</h3>
+                          </div>
+                          <div className="space-y-3 pl-0 sm:pl-14">
+                            {options.map((opt, i) => {
+                              let optionClass = "p-4 rounded-xl border flex justify-between items-center ";
+                              if (opt.key === item.c) optionClass += "bg-emerald-50 border-emerald-200 text-emerald-800 font-medium shadow-sm";
+                              else if (opt.key === item.s && !isCorrect) optionClass += "bg-red-50 border-red-200 text-red-800 shadow-sm";
+                              else optionClass += "bg-white border-gray-100 text-gray-500 opacity-70";
+                              return (
+                                <div key={i} className={optionClass}>
+                                  <span>{opt.text}</span>
+                                  {opt.key === item.c && <CheckCircle size={20} className="text-emerald-600" />}
+                                  {opt.key === item.s && !isCorrect && <XCircle size={20} className="text-red-600" />}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="pl-0 sm:pl-14 mt-4">
+                             {!isCorrect && (
+                                <div className="mt-4 pt-4 border-t border-gray-100">
+                                    {currentAiQuestionId === item.id && aiExplanation ? (
+                                        <div className="bg-indigo-50 p-4 rounded-xl text-sm text-indigo-800 leading-relaxed animate-enter border border-indigo-100">
+                                            <div className="flex items-center gap-2 font-bold mb-2 text-indigo-900"><Sparkles size={16} /> Giải thích (AI):</div>
+                                            {aiExplanation}
+                                        </div>
+                                    ) : (
+                                        <button onClick={() => fetchAiExplanation(item.q, correctOptionText, item.id)} disabled={isAiLoading} className="text-sm font-medium text-indigo-600 hover:text-indigo-800 flex items-center gap-2 transition-colors">
+                                            <Sparkles size={16} /> {isAiLoading && currentAiQuestionId === item.id ? "Đang tải..." : "Tại sao đáp án này đúng?"}
+                                        </button>
+                                    )}
+                                </div>
+                             )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          if (!currentPart) {
+            const menuItems = [
+                { id: 1, label: "Cấu trúc Tế bào", sub: "Câu 1 - 45", color: "emerald", icon: <Microscope size={28} /> },
+                { id: 2, label: "Bào quan & Quang hợp", sub: "Câu 46 - 90", color: "sky", icon: <Sun size={28} /> },
+                { id: 3, label: "Dinh dưỡng khoáng", sub: "Câu 91 - 135", color: "amber", icon: <Sprout size={28} /> },
+                { id: 4, label: "Màng & Hô hấp", sub: "Câu 136 - 180", color: "rose", icon: <Zap size={28} /> },
+                { id: 5, label: "Ánh sáng & CO2", sub: "Câu 181 - 225", color: "cyan", icon: <Leaf size={28} /> },
+                { id: 6, label: "Biến đổi khí hậu", sub: "Câu 226 - 270", color: "orange", icon: <Thermometer size={28} /> },
+                { id: 7, label: "Sink & Source", sub: "Câu 271 - 315", color: "violet", icon: <Droplet size={28} /> },
+                { id: 8, label: "Tổng hợp nâng cao", sub: "Câu 316 - 360", color: "indigo", icon: <Layers size={28} /> }
+            ];
+            return (
+              <div className="min-h-screen p-6 sm:p-8 flex flex-col items-center justify-center font-sans">
+                <div className="w-full max-w-5xl space-y-10 animate-enter text-center">
+                  {/* Header Section */}
+                  <div className="space-y-4">
+                    <div className="inline-flex p-4 rounded-full bg-white shadow-lg mb-2">
+                        <div className="bg-gradient-to-tr from-emerald-400 to-teal-500 p-3 rounded-full text-white">
+                            <Leaf size={40} />
+                        </div>
+                    </div>
+                    <h1 className="text-4xl font-bold text-gray-800 tracking-tight">Sinh Lý Thực Vật</h1>
+                    
+                    {/* Contact Info Box */}
+                    <div className="flex flex-col items-center gap-1 text-gray-600 bg-white/60 py-3 px-6 rounded-2xl border border-white/80 inline-block mx-auto shadow-md">
+                        <div className="flex items-center gap-2 font-semibold text-brand-700">
+                            <User size={20} /> 
+                            <span>Tên: Nguyễn Văn Lượng</span>
+                        </div>
+                        <div className="flex items-center gap-2 font-semibold text-brand-700">
+                            <Phone size={20} /> 
+                            <span>LH: 0333738861</span>
+                        </div>
+                    </div>
+
+                    {/* Promotion Box */}
+                    <div className="bg-gradient-to-r from-brand-600 to-teal-700 text-white p-6 rounded-3xl shadow-xl max-w-3xl mx-auto border border-brand-500/30 overflow-hidden relative group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                            <Sparkles size={100} />
+                        </div>
+                        <div className="relative z-10 flex flex-col items-center gap-4">
+                            <div className="flex items-center gap-3">
+                                <Sparkles size={28} className="text-yellow-300 animate-pulse" />
+                                <span className="font-bold text-xl sm:text-2xl leading-tight">Nhận làm Quiz Ôn Tập & PowerPoint Cơ Bản</span>
+                            </div>
+                            <div className="flex flex-wrap justify-center gap-4 mt-2">
+                                 <div className="bg-white/20 backdrop-blur-md text-white border border-white/30 px-4 py-2 rounded-2xl flex items-center gap-2 shadow-sm">
+                                    <CheckCircle size={18} className="text-emerald-300" /> 
+                                    <span className="font-medium text-sm">Hệ thống Quiz</span>
+                                 </div>
+                                 <div className="bg-white/20 backdrop-blur-md text-white border border-white/30 px-4 py-2 rounded-2xl flex items-center gap-2 shadow-sm">
+                                    <Presentation size={18} className="text-sky-300" /> 
+                                    <span className="font-medium text-sm">Thiết kế PPT</span>
+                                 </div>
+                                 <div className="bg-white/20 backdrop-blur-md text-white border border-white/30 px-4 py-2 rounded-2xl flex items-center gap-2 shadow-sm">
+                                    <Layers size={18} className="text-orange-300" /> 
+                                    <span className="font-medium text-sm">Tài liệu học tập</span>
+                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
+
+                  {/* Grid Menu */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                    {menuItems.map((item) => {
+                        const colorMap = { emerald: "text-emerald-600 hover:border-emerald-300", sky: "text-sky-600 hover:border-sky-300", amber: "text-amber-600 hover:border-amber-300", rose: "text-rose-600 hover:border-rose-300", cyan: "text-cyan-600 hover:border-cyan-300", orange: "text-orange-600 hover:border-orange-300", violet: "text-violet-600 hover:border-violet-300", indigo: "text-indigo-600 hover:border-indigo-300" };
+                        return (
+                            <button key={item.id} onClick={() => startQuiz(item.id)} className={`relative group p-6 rounded-2xl border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl flex flex-col items-center justify-center gap-3 text-center bg-white ${colorMap[item.color]}`}>
+                              <div className="p-3 rounded-xl bg-white shadow-sm group-hover:scale-110 transition-transform duration-300">{item.icon}</div>
+                              <div><div className="font-bold text-lg text-gray-800">{item.label}</div><div className="text-xs font-medium opacity-70 mt-1">{item.sub}</div></div>
+                            </button>
+                        )
+                    })}
+                  </div>
+
+                  {/* History Section */}
+                  <div className="glass-panel p-6 rounded-3xl shadow-sm border border-white/50 max-w-2xl mx-auto w-full">
+                    <div className="flex justify-between items-center mb-6 px-2">
+                      <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><History className="text-gray-400" size={20} /> Lịch sử</h2>
+                      {history.length > 0 && <button onClick={clearHistory} className="text-rose-500 hover:text-rose-700 p-2 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 size={18} /></button>}
+                    </div>
+                    {history.length === 0 ? <div className="text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-xl">Chưa có dữ liệu bài làm</div> : (
+                      <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar text-left">
+                        {history.map((record) => (
+                          <div key={record.id} className="p-4 bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 hover:shadow-md transition-shadow">
+                            <div className="flex-1 w-full sm:w-auto">
+                              <div className="font-bold text-gray-700 flex items-center gap-2">Phần {record.part}</div>
+                              <div className="text-xs text-gray-400 mt-1 tracking-tight italic">{record.date}</div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="text-right">
+                                    <div className="text-sm font-bold"><span className="text-emerald-600">{record.score} Đ</span><span className="text-rose-500 ml-1">/ {record.wrong} S</span></div>
+                                    <div className="text-[10px] text-gray-400">/{record.total} câu</div>
+                                </div>
+                                <button onClick={() => { setReviewData(record.details || []); setReviewMode(true); }} className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors"><Eye size={18} /></button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          if (showResult) {
+            return (
+              <div className="min-h-screen flex items-center justify-center p-4 font-sans bg-gray-50 text-center">
+                <div className="bg-white p-8 sm:p-10 rounded-3xl shadow-xl max-w-md w-full border border-gray-100 animate-enter">
+                  <div className="relative inline-block mb-6"><div className="absolute inset-0 bg-yellow-200 blur-xl opacity-50 rounded-full"></div><Award className="w-24 h-24 text-yellow-500 relative z-10 animate-bounce-slow" /></div>
+                  <h2 className="text-3xl font-bold mb-2 text-gray-800 tracking-tight">Hoàn Thành!</h2>
+                  <p className="text-gray-400 text-sm mb-8">Kết quả của bạn đã được ghi lại</p>
+                  <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100"><p className="text-emerald-600 text-xs font-bold uppercase tracking-wider mb-1">Đúng</p><p className="text-4xl font-bold text-emerald-600">{score}</p></div>
+                    <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100"><p className="text-rose-500 text-xs font-bold uppercase tracking-wider mb-1">Sai</p><p className="text-4xl font-bold text-rose-500">{wrongScore}</p></div>
+                  </div>
+                  <button onClick={resetQuiz} className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2"><RotateCcw size={20} /> Về màn hình chính</button>
+                </div>
+              </div>
+            );
+          }
+
+          const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+          return (
+            <div className="min-h-screen flex flex-col items-center p-4 sm:p-6 font-sans relative">
+              {isConfirming && (
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-enter">
+                  <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl">
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">Kết thúc bài?</h3>
+                    <p className="text-gray-500 mb-8">Kết quả hiện tại sẽ được lưu lại.</p>
+                    <div className="flex gap-3">
+                      <button onClick={() => setIsConfirming(false)} className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-bold transition-colors">Tiếp tục</button>
+                      <button onClick={confirmFinish} className="flex-1 py-3 px-4 bg-rose-500 text-white rounded-xl font-bold shadow-lg transition-colors text-sm sm:text-base">Kết thúc</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="w-full max-w-3xl flex justify-between items-center mb-6 pt-2">
+                <button onClick={requestFinish} className="p-2 rounded-xl text-gray-400 hover:text-rose-500 hover:bg-rose-50 transition-all"><LogOut size={24} /></button>
+                <div className="glass-panel px-4 py-2 rounded-full border border-white/60 shadow-sm text-xs sm:text-sm font-semibold text-gray-600">Phần {currentPart} - Câu {currentQuestionIndex + 1}</div>
+                <div className="flex items-center gap-3"><div className="flex items-center gap-1 text-emerald-600 font-bold bg-emerald-50 px-3 py-1 rounded-lg"><CheckCircle size={16} /> {score}</div></div>
+              </div>
+              <div className="w-full max-w-3xl mb-8">
+                <div className="h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 transition-all duration-500 ease-out rounded-full" style={{ width: `${progress}%` }} /></div>
+              </div>
+              <div className="w-full max-w-3xl bg-white p-6 sm:p-10 rounded-3xl shadow-xl border border-gray-100 mb-24 relative overflow-hidden animate-enter">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+                <div className="mb-8"><span className="inline-block bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-1 rounded mb-3 tracking-wide">ID: {currentQ.id}</span><h2 className="text-xl sm:text-2xl font-bold text-gray-800 leading-normal">{currentQ.q}</h2></div>
+                <div className="space-y-3">
+                  {shuffledOptions.map((option, idx) => {
+                    let containerClass = "w-full p-5 rounded-2xl border-2 text-left transition-all duration-200 flex justify-between items-center relative overflow-hidden ";
+                    if (selectedOption) {
+                      if (option.key === currentQ.correct) containerClass += "border-emerald-500 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-200";
+                      else if (option.key === selectedOption) containerClass += "border-rose-500 bg-rose-50 text-rose-800 ring-2 ring-rose-200";
+                      else containerClass += "border-gray-100 text-gray-400 opacity-60";
+                    } else containerClass += "border-gray-100 hover:border-emerald-300 hover:bg-emerald-50/50 cursor-pointer active:scale-[0.99] text-gray-600";
+                    return (
+                      <button key={idx} onClick={() => handleOptionSelect(option.key)} disabled={!!selectedOption} className={containerClass}>
+                        <span className="relative z-10 font-medium text-lg">{option.text}</span>
+                        {selectedOption && option.key === currentQ.correct && <CheckCircle className="text-emerald-600 relative z-10" size={24} />}
+                        {selectedOption && option.key === selectedOption && option.key !== currentQ.correct && <XCircle className="text-rose-600 relative z-10" size={24} />}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedOption && (
+                  <div className="mt-6 pt-6 border-t border-gray-100 animate-enter">
+                    {!aiExplanation ? (
+                      <button onClick={() => fetchAiExplanation(currentQ.q, currentQ.options.find(o=>o.key===currentQ.correct)?.text, currentQ.id)} disabled={isAiLoading} className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 py-2 px-4 rounded-lg hover:bg-indigo-50"><Sparkles size={18} /> {isAiLoading ? "AI đang phân tích..." : "Giải thích chi tiết (AI)"}</button>
+                    ) : (
+                      <div className="bg-gradient-to-br from-indigo-50 to-white p-5 rounded-2xl border border-indigo-100 text-sm text-indigo-900 leading-relaxed shadow-sm">
+                        <div className="flex items-center gap-2 font-bold mb-2 text-indigo-700"><Sparkles size={16} /> Góc kiến thức:</div>{aiExplanation}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-200 flex justify-center items-center gap-4 z-20">
+                <button onClick={prevQuestion} disabled={currentQuestionIndex === 0} className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${currentQuestionIndex === 0 ? 'bg-gray-100 text-gray-300' : 'bg-white border-2 border-gray-200 text-gray-600 hover:border-gray-400'}`}><ChevronLeft size={24} /></button>
+                <button onClick={nextQuestion} disabled={!selectedOption && !sessionAnswers.some(a => a.id === currentQ.id)} className={`flex-1 max-w-md h-14 rounded-2xl font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-95 ${(!selectedOption && !sessionAnswers.some(a => a.id === currentQ.id)) ? 'bg-gray-100 text-gray-400' : isCorrect ? 'bg-emerald-600 text-white shadow-emerald-200' : 'bg-gray-800 text-white shadow-gray-300'}`}>{currentQuestionIndex === questions.length - 1 ? "Xem kết quả" : "Câu tiếp theo"} <ChevronRight size={24} /></button>
+              </div>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<QuizApp />);
+    </script>
+</body>
+</html>
