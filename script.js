@@ -11,7 +11,6 @@ document.getElementById('convertBtn').addEventListener('click', function() {
     reader.onload = function(event) {
         const fileContent = event.target.result;
 
-        // Đây là nơi bạn sẽ xử lý chuyển đổi file
         // Giả sử bạn đã chuyển đổi nội dung thành một chuỗi văn bản
         const textContent = 'Nội dung từ file đã chuyển đổi'; // Thay đổi theo nội dung thực tế
 
@@ -19,10 +18,11 @@ document.getElementById('convertBtn').addEventListener('click', function() {
         document.getElementById('output').innerText = 'File đã được tải lên: ' + file.name;
 
         // Hiển thị nút tải xuống
-        document.getElementById('downloadBtn').style.display = 'block';
+        const downloadBtn = document.getElementById('downloadBtn');
+        downloadBtn.style.display = 'block';
 
         // Thêm sự kiện cho nút tải xuống
-        document.getElementById('downloadBtn').onclick = function() {
+        downloadBtn.onclick = function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
