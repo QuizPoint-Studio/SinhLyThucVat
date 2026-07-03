@@ -7,29 +7,21 @@ document.getElementById('convertBtn').addEventListener('click', function() {
         return;
     }
 
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const fileContent = event.target.result;
+    // Hiển thị thông báo đã chọn file
+    document.getElementById('output').innerText = 'File đã được tải lên: ' + file.name;
 
-        // Giả sử bạn đã chuyển đổi nội dung thành một chuỗi văn bản
-        const textContent = 'Nội dung từ file đã chuyển đổi'; // Thay đổi theo nội dung thực tế
+    // --- QUAN TRỌNG: Dòng này sẽ làm nút tải xuống hiện ra ---
+    const downloadBtn = document.getElementById('downloadBtn');
+    downloadBtn.style.display = 'inline-block'; 
+    // ---------------------------------------------------------
 
-        // Hiển thị thông báo
-        document.getElementById('output').innerText = 'File đã được tải lên: ' + file.name;
+    // Sự kiện khi nhấn nút tải xuống
+    downloadBtn.onclick = function() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
 
-        // Hiển thị nút tải xuống
-        const downloadBtn = document.getElementById('downloadBtn');
-        downloadBtn.style.display = 'block';
-
-        // Thêm sự kiện cho nút tải xuống
-        downloadBtn.onclick = function() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            // Thêm nội dung vào PDF
-            doc.text(textContent, 10, 10);
-            doc.save('converted.pdf'); // Tên file tải xuống
-        };
+        // Nội dung giả lập (sau này bạn sẽ thay bằng nội dung thực từ file)
+        doc.text("Đây là file đã được chuyển đổi!", 10, 10);
+        doc.save('converted.pdf'); 
     };
-    reader.readAsArrayBuffer(file);
 });
